@@ -7,7 +7,7 @@ import math
 
 def FindPeaks(signal, samplingRate, threshold = -1, reachBackTime = 0.05, reachAheadTime = 0.1): #returns sample numbers of all offsets that exceed threshold
     if threshold == -1:
-        threshold = 0.6 * np.amax(signal)
+        threshold = 0.8 * np.amax(signal)
     DetectedOffsets = librosa.onset.onset_detect(signal, samplingRate, backtrack=False, units="samples")
     parsingIndicator = []
 
@@ -67,7 +67,7 @@ def WriteParsedImpulsesToFolder(impulses, sampleRate, outputDirectory, seriesDir
 
 # main
 inputDirectory = "InputFolder"
-outputDirectory = "OutputFolder"
+outputDirectory = "ParserOutputFolder"
 os.mkdir(outputDirectory)
 
 for seriesSignal in os.listdir(os.fsencode(inputDirectory)):
