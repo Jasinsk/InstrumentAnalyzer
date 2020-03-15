@@ -10,3 +10,5 @@ If such problems arise it is advised to follow these steps:
 3. activate environment: source activate myfirstenv
 4. install librosa: conda install -c conda-forge librosa
 5. set created environment as project interpreter
+
+If you encounter audioread.NoBackendError please make sure that you have the ffmpeg library installed and it's location is available to Python in the environment variables. 
