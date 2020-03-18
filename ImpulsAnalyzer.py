@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import librosa
 import librosa.display
 import math
+import shutil
 
 def CalculateAverageVector(Vectors): #Takes a vector of vectors and calculates a average vector
     averageVector = np.mean(Vectors, axis=0)
@@ -36,8 +37,14 @@ def CalculateFFTs(takes, samplingRate, attackTime, sustainTime): #Takes array of
 
 
 inputDirectory = "ParserOutputFolder"
-samplingRate = 1
+outputDirectory = "AnalyzerOutputFolder"
 
+if os.path.isdir(outputDirectory):
+        shutil.rmtree(outputDirectory)
+os.mkdir(outputDirectory)
+
+samplingRate = 0
+# The impulse is cut into three parts, beginning-attackTime, attackTime-sustainTime, sustainTime-end
 attackTime = 0.3
 sustainTime = 1.3
 
@@ -103,7 +110,11 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     plt.xlim([0, 3000])
     plt.xlabel('frequency [Hz]')
 
-    plt.savefig(seriesDirectory)
+    outputFile = seriesDirectory.replace(inputDirectory, outputDirectory)
+    print(outputFile)
+    #if os.path.isfile(seriesDirectory + ".png"):
+    #    os.remove(seriesDirectory + ".png")
+    plt.savefig(outputFile)
     plt.show()
 
 

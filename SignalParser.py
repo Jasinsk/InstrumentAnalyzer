@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import librosa as lbr
 import librosa.display
 import math
+import shutil
 
 def FindPeaks(signal, samplingRate, threshold = -1, reachBackTime = 0.05, reachAheadTime = 0.1): #returns sample numbers of all offsets that exceed threshold
     if threshold == -1:
@@ -68,6 +69,9 @@ def WriteParsedImpulsesToFolder(impulses, sampleRate, outputDirectory, seriesDir
 # main
 inputDirectory = "InputFolder"
 outputDirectory = "ParserOutputFolder"
+
+if os.path.isdir(outputDirectory):
+        shutil.rmtree(outputDirectory)
 os.mkdir(outputDirectory)
 
 for seriesSignal in os.listdir(os.fsencode(inputDirectory)):
