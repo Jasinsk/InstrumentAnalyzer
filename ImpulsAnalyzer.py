@@ -10,22 +10,36 @@ def CalculateAverageVector(Vectors): #Takes a vector of vectors and calculates a
     averageVector = np.mean(Vectors, axis=0)
     return averageVector
 
-def CalculateFFT(takes, samplingRate): #Takes array of impulses and creates array of spectrums
+def CalculateFFTs(takes, samplingRate, attackTime, sustainTime): #Takes array of impulses and creates array of spectrums
 
-    spectrums = []
-    frequencies = 0
+    attackSpectrums, sustainSpectrums, decaySpectrums = [], [], []
+    attackFrequencies, sustainFrequencies, decayFrequencies = 0, 0, 0
     for take in takes:
-        frequencies, spectrum = signal.periodogram(take, samplingRate, scaling="spectrum")
-        if spectrums == []: #Not very elegant way to make sure the first impulse is loaded in correctly
-            spectrums = spectrum.real
-        else:
-            spectrums = np.vstack([spectrums, spectrum.real])
+        attackFrequencies, attackSpectrum = signal.periodogram(take[:int(attackTime*samplingRate)], samplingRate, scaling="spectrum")
+        sustainFrequencies, sustainSpectrum = signal.periodogram(take[int(attackTime*samplingRate):int(sustainTime*samplingRate)], samplingRate, scaling="spectrum")
+        decayFrequencies, decaySpectrum = signal.periodogram(take[int(sustainTime*samplingRate):], samplingRate, scaling="spectrum")
 
-    return frequencies, spectrums
+        if attackSpectrums == []: #Not very elegant way to make sure the first impulse is loaded in correctly
+            attackSpectrums = attackSpectrum.real
+        else:
+            attackSpectrums = np.vstack([attackSpectrums, attackSpectrum.real])
+        if sustainSpectrums == []: #Not very elegant way to make sure the first impulse is loaded in correctly
+            sustainSpectrums = sustainSpectrum.real
+        else:
+            sustainSpectrums = np.vstack([sustainSpectrums, sustainSpectrum.real])
+        if decaySpectrums == []: #Not very elegant way to make sure the first impulse is loaded in correctly
+            decaySpectrums = decaySpectrum.real
+        else:
+            decaySpectrums = np.vstack([decaySpectrums, decaySpectrum.real])
+
+    return attackFrequencies, attackSpectrums, sustainFrequencies, sustainSpectrums, decayFrequencies, decaySpectrums
 
 
 inputDirectory = "ParserOutputFolder"
 samplingRate = 1
+
+attackTime = 0.3
+sustainTime = 1.3
 
 for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     seriesDirectory = inputDirectory + "/" + os.fsdecode(seriesDirectory)
@@ -52,8 +66,10 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     #We have a working system that throws into a single data object all the tries for one situation
     #Now we should try to calculate the required parameters from each try.
 
-    frequencies, spectrums = CalculateFFT(impulses, samplingRate)
-    avrSpectrum = CalculateAverageVector(spectrums)
+    attackFrequencies, attackSpectrums, sustainFrequencies, sustainSpectrums, decayFrequencies, decaySpectrums = CalculateFFTs(impulses, samplingRate, attackTime, sustainTime)
+    avrAttackSpectrum = CalculateAverageVector(attackSpectrums)
+    avrSustainSpectrum = CalculateAverageVector(sustainSpectrums)
+    avrDecaySpectrum = CalculateAverageVector(decaySpectrums)
 
     print("Spectral centroids")
     print("mean: ")
@@ -71,11 +87,22 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     print("stdev: ")
     print(np.std(rmss))
 
-    plt.plot(frequencies, avrSpectrum)
+    plt.subplot(311)
+    plt.plot(attackFrequencies, avrAttackSpectrum)
     plt.title(seriesDirectory)
-    #plt.ylim([0.5e-3, 1])
     plt.xlim([0, 3000])
     plt.xlabel('frequency [Hz]')
+
+    plt.subplot(312)
+    plt.plot(sustainFrequencies, avrSustainSpectrum)
+    plt.xlim([0, 3000])
+    plt.xlabel('frequency [Hz]')
+
+    plt.subplot(313)
+    plt.plot(decayFrequencies, avrDecaySpectrum)
+    plt.xlim([0, 3000])
+    plt.xlabel('frequency [Hz]')
+
     plt.savefig(seriesDirectory)
     plt.show()
 
