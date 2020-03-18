@@ -7,6 +7,14 @@ import librosa.display
 import math
 import shutil
 
+def InsertIntoVstack(vector, stack):
+    if stack == []:  # Not very elegant way to make sure the first impulse is loaded in correctly
+        stack = vector
+    else:
+        stack = np.vstack([stack, vector])
+
+    return stack
+
 def CalculateAverageVector(Vectors): #Takes a vector of vectors and calculates a average vector
     averageVector = np.mean(Vectors, axis=0)
     return averageVector
@@ -20,18 +28,9 @@ def CalculateFFTs(takes, samplingRate, attackTime, sustainTime): #Takes array of
         sustainFrequencies, sustainSpectrum = signal.periodogram(take[int(attackTime*samplingRate):int(sustainTime*samplingRate)], samplingRate, scaling="spectrum")
         decayFrequencies, decaySpectrum = signal.periodogram(take[int(sustainTime*samplingRate):], samplingRate, scaling="spectrum")
 
-        if attackSpectrums == []: #Not very elegant way to make sure the first impulse is loaded in correctly
-            attackSpectrums = attackSpectrum.real
-        else:
-            attackSpectrums = np.vstack([attackSpectrums, attackSpectrum.real])
-        if sustainSpectrums == []: #Not very elegant way to make sure the first impulse is loaded in correctly
-            sustainSpectrums = sustainSpectrum.real
-        else:
-            sustainSpectrums = np.vstack([sustainSpectrums, sustainSpectrum.real])
-        if decaySpectrums == []: #Not very elegant way to make sure the first impulse is loaded in correctly
-            decaySpectrums = decaySpectrum.real
-        else:
-            decaySpectrums = np.vstack([decaySpectrums, decaySpectrum.real])
+        attackSpectrums = InsertIntoVstack(attackSpectrum.real, attackSpectrums)
+        sustainSpectrums = InsertIntoVstack(sustainSpectrum.real, sustainSpectrums)
+        decaySpectrums = InsertIntoVstack(decaySpectrum.real, decaySpectrums)
 
     return attackFrequencies, attackSpectrums, sustainFrequencies, sustainSpectrums, decayFrequencies, decaySpectrums
 
