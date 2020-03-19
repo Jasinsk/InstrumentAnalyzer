@@ -50,10 +50,7 @@ sustainTime = 1.3
 for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     seriesDirectory = inputDirectory + "/" + os.fsdecode(seriesDirectory)
     print("Entering folder: " + seriesDirectory)
-    impulses = []
-    centroids = []
-    rolloffs = []
-    rmss = []
+    impulses, centroids, rolloffs, rmss = [], [], [], []
 
     for impulseFile in os.listdir(os.fsencode(seriesDirectory)):
         impulseFileName = seriesDirectory + "/" + os.fsdecode(impulseFile)
@@ -64,13 +61,7 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
         rolloffs.append(np.mean(librosa.feature.spectral_rolloff(impulse)))
         rmss.append(np.mean(librosa.feature.rmse(impulse)))
 
-        if impulses == []: #Not very elegant way to make sure the first impulse is loaded in correctly
-            impulses = impulse
-        else:
-            impulses = np.vstack([impulses, impulse])
-
-    #We have a working system that throws into a single data object all the tries for one situation
-    #Now we should try to calculate the required parameters from each try.
+        impulses = InsertIntoVstack(impulse, impulses)
 
     attackFrequencies, attackSpectrums, sustainFrequencies, sustainSpectrums, decayFrequencies, decaySpectrums = CalculateFFTs(impulses, samplingRate, attackTime, sustainTime)
     avrAttackSpectrum = CalculateAverageVector(attackSpectrums)
