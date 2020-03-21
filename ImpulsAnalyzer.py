@@ -6,6 +6,7 @@ import librosa
 import librosa.display
 import math
 import shutil
+import csv
 
 def InsertIntoVstack(vector, stack):
     if stack == []:  # Not very elegant way to make sure the first impulse is loaded in correctly
@@ -47,6 +48,10 @@ samplingRate = 0
 attackTime = 0.3
 sustainTime = 1.3
 
+#These variables are used to save the parameter data to a csv file
+data_array = []
+series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values, rms_deviations = [" "], ["Spectrum Centroid"], ["Centroid Deviation"], ["Rolloff"], ["Rolloff Deviation"], ["RMS"], ["RMS Deviation"]
+
 for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     seriesDirectory = inputDirectory + "/" + os.fsdecode(seriesDirectory)
     print("Entering folder: " + seriesDirectory)
@@ -67,6 +72,15 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     avrAttackSpectrum = CalculateAverageVector(attackSpectrums)
     avrSustainSpectrum = CalculateAverageVector(sustainSpectrums)
     avrDecaySpectrum = CalculateAverageVector(decaySpectrums)
+
+    seriesName = seriesDirectory.replace(inputDirectory + "/", "")
+    series_names.append(seriesName)
+    centroid_values.append(np.mean(centroids))
+    centroid_deviations.append(np.std(centroids))
+    rolloff_values.append(np.mean(rolloffs))
+    rolloff_deviations.append(np.std(rolloffs))
+    rms_values.append(np.mean(rmss))
+    rms_deviations.append(np.std(rmss))
 
     print("Spectral centroids")
     print("mean: ")
@@ -105,7 +119,21 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     #if os.path.isfile(seriesDirectory + ".png"):
     #    os.remove(seriesDirectory + ".png")
     plt.savefig(outputFile)
-    plt.show()
+    #plt.show()
+
+data_array = np.vstack([series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values, rms_deviations])
+np.save('data.npy', data_array)
+
+with open('data.csv', 'w', newline='') as csvfile:
+    dataWriter = csv.writer(csvfile, delimiter=',', quotechar=';', quoting=csv.QUOTE_MINIMAL)
+    dataWriter.writerow(series_names)
+    dataWriter.writerow(centroid_values)
+    dataWriter.writerow(centroid_deviations)
+    dataWriter.writerow(rms_values)
+    dataWriter.writerow(rms_deviations)
+    dataWriter.writerow(rolloff_values)
+    dataWriter.writerow(rolloff_deviations)
+
 
 
 
