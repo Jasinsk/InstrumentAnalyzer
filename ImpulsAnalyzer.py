@@ -38,6 +38,7 @@ def CalculateFFTs(takes, samplingRate, attackTime, sustainTime): #Takes array of
 
 inputDirectory = "ParserOutputFolder"
 outputDirectory = "AnalyzerOutputFolder"
+dataFileName = "ParameterData"
 
 if os.path.isdir(outputDirectory):
         shutil.rmtree(outputDirectory)
@@ -82,22 +83,6 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     rms_values.append(np.mean(rmss))
     rms_deviations.append(np.std(rmss))
 
-    print("Spectral centroids")
-    print("mean: ")
-    print(np.mean(centroids))
-    print("stdev: ")
-    print(np.std(centroids))
-    print("Spectral rolloff")
-    print("mean: ")
-    print(np.mean(rolloffs))
-    print("stdev: ")
-    print(np.std(rolloffs))
-    print("RMS")
-    print("mean: ")
-    print(np.mean(rmss))
-    print("stdev: ")
-    print(np.std(rmss))
-
     plt.subplot(131)
     plt.plot(attackFrequencies, avrAttackSpectrum)
     plt.title(seriesDirectory)
@@ -113,7 +98,7 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     plt.xlabel('frequency [Hz]')
 
     outputFile = seriesDirectory.replace(inputDirectory, outputDirectory)
-    print(outputFile)
+    print("Outputing to: " + outputFile)
     #if os.path.isfile(seriesDirectory + ".png"):
     #    os.remove(seriesDirectory + ".png")
     figure = plt.gcf()
@@ -124,8 +109,8 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
 
 data_array = np.vstack([series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values, rms_deviations])
 
-np.save(outputDirectory + '/data.npy', data_array)
-with open(outputDirectory + '/data.csv', 'w', newline='') as csvfile:
+np.save(outputDirectory + '/' + dataFileName + '.npy', data_array)
+with open(outputDirectory + '/' + dataFileName + '.csv', 'w', newline='') as csvfile:
     dataWriter = csv.writer(csvfile, delimiter=',', quotechar=';', quoting=csv.QUOTE_MINIMAL)
     dataWriter.writerow(series_names)
     dataWriter.writerow(centroid_values)
@@ -134,6 +119,8 @@ with open(outputDirectory + '/data.csv', 'w', newline='') as csvfile:
     dataWriter.writerow(rms_deviations)
     dataWriter.writerow(rolloff_values)
     dataWriter.writerow(rolloff_deviations)
+
+print("Data saved to: " + dataFileName)
 
 
 
