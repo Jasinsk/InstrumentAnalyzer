@@ -98,16 +98,16 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     print("stdev: ")
     print(np.std(rmss))
 
-    plt.subplot(311)
+    plt.subplot(131)
     plt.plot(attackFrequencies, avrAttackSpectrum)
     plt.title(seriesDirectory)
     plt.xlim([0, 3000])
 
-    plt.subplot(312)
+    plt.subplot(132)
     plt.plot(sustainFrequencies, avrSustainSpectrum)
     plt.xlim([0, 3000])
 
-    plt.subplot(313)
+    plt.subplot(133)
     plt.plot(decayFrequencies, avrDecaySpectrum)
     plt.xlim([0, 3000])
     plt.xlabel('frequency [Hz]')
@@ -119,13 +119,13 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     figure = plt.gcf()
     figure.set_size_inches(19.2, 10.8)
     plt.savefig(outputFile, dpi = 100)
-    plt.show()
+    #plt.show()
     plt.clf()
 
 data_array = np.vstack([series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values, rms_deviations])
-np.save('data.npy', data_array)
 
-with open('data.csv', 'w', newline='') as csvfile:
+np.save(outputDirectory + '/data.npy', data_array)
+with open(outputDirectory + '/data.csv', 'w', newline='') as csvfile:
     dataWriter = csv.writer(csvfile, delimiter=',', quotechar=';', quoting=csv.QUOTE_MINIMAL)
     dataWriter.writerow(series_names)
     dataWriter.writerow(centroid_values)
