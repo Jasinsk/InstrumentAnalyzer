@@ -120,6 +120,7 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     #    os.remove(seriesDirectory + ".png")
     plt.savefig(outputFile)
     #plt.show()
+    plt.clf()
 
 data_array = np.vstack([series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values, rms_deviations])
 np.save('data.npy', data_array)
