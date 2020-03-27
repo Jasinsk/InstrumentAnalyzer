@@ -102,12 +102,10 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     plt.plot(attackFrequencies, avrAttackSpectrum)
     plt.title(seriesDirectory)
     plt.xlim([0, 3000])
-    plt.xlabel('frequency [Hz]')
 
     plt.subplot(312)
     plt.plot(sustainFrequencies, avrSustainSpectrum)
     plt.xlim([0, 3000])
-    plt.xlabel('frequency [Hz]')
 
     plt.subplot(313)
     plt.plot(decayFrequencies, avrDecaySpectrum)
@@ -118,8 +116,10 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     print(outputFile)
     #if os.path.isfile(seriesDirectory + ".png"):
     #    os.remove(seriesDirectory + ".png")
-    plt.savefig(outputFile)
-    #plt.show()
+    figure = plt.gcf()
+    figure.set_size_inches(19.2, 10.8)
+    plt.savefig(outputFile, dpi = 100)
+    plt.show()
     plt.clf()
 
 data_array = np.vstack([series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values, rms_deviations])
