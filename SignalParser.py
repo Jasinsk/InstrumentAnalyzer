@@ -32,6 +32,7 @@ def RemoveDuplicatePeaks(peaks, samplingRate, minimalTimeDifference = 5): #trims
     for i in range(0, len(peaks) - 1):
         if peaks[i] + samplingRate * minimalTimeDifference > peaks[i+1]:
             peaks[i+1] = 0
+            print('Duplicate peaks detected!')
     peaks = np.ma.masked_equal(peaks,0).compressed()
     return peaks
 
@@ -45,7 +46,7 @@ def ParseImpulses(signal, samplingRate, peaks, attackTime = 0.05, decayTime = 7)
             impulses = np.vstack([impulses, impuls])
     return impulses
 
-def RemoveImpulsesWithEnergyDeviation(impulses, acceptableDeviation = 0.3): #trims impulses that have too large of a energy deviation from the mean
+def RemoveImpulsesWithEnergyDeviation(impulses, acceptableDeviation = 0.3, impulsPeaks = []): #trims impulses that have too large of a energy deviation from the mean
     impulsEnergies = []
     for i in range (0, len(impulses[:,0])):
         impulsEnergies.append(sum((impulses[i,:]) * (impulses[i,:])))
@@ -54,10 +55,11 @@ def RemoveImpulsesWithEnergyDeviation(impulses, acceptableDeviation = 0.3): #tri
     for el in impulsEnergies:
         if el > meanEnergy * (1 + acceptableDeviation) or el < meanEnergy * (1 - acceptableDeviation):
             impulses = np.delete(impulses, i, axis=0)
+            impulsPeaks = np.delete(impulsPeaks, i)
             print("Energy Deviation Detected!")
         else:
             i += 1
-    return impulses
+    return impulses, impulsPeaks
 
 def WriteParsedImpulsesToFolder(impulses, sampleRate, outputDirectory, seriesDirectory): #pushes impulses to files in a folder inside the output folder
     path = outputDirectory + "/" + seriesDirectory
@@ -83,23 +85,27 @@ for seriesSignal in os.listdir(os.fsencode(inputDirectory)):
     foundPeaks = FindPeaks(signal, samplingRate)
     foundPeaks = RemoveDuplicatePeaks(foundPeaks, samplingRate)
     foundImpulses = ParseImpulses(signal, samplingRate, foundPeaks)
-    validatedImpulses = RemoveImpulsesWithEnergyDeviation(foundImpulses, 0.17)
+    validatedImpulses, validatedPeaks = RemoveImpulsesWithEnergyDeviation(foundImpulses, 0.17, foundPeaks)
     WriteParsedImpulsesToFolder(validatedImpulses, samplingRate, outputDirectory, seriesDirectory)
-
-#print(foundPeaks)
 
     parsingIndicator = np.zeros(len(signal))
     for el in foundPeaks:
         parsingIndicator[el] = 1
+        parsingIndicator[el+1] = -1
 
+    validatedIndicator = np.zeros(len(signal))
+    for el in validatedPeaks:
+        validatedIndicator[el] = 1
+        validatedIndicator[el+1]=-1
+
+    timeVector = np.arange(0, len(signal)/samplingRate, 1/samplingRate)
+    ylimit = max(abs(signal)) * 1.2
     plt.figure()
-    librosa.display.waveplot(signal, samplingRate)
-    librosa.display.waveplot(parsingIndicator, samplingRate)
+    plt.plot(timeVector, signal, 'b', label='Signal')
+    plt.plot(timeVector, parsingIndicator, 'r', label='Discarded peaks')
+    plt.plot(timeVector, validatedIndicator, 'g', label='Accepted peaks')
+    plt.ylim(-ylimit, ylimit)
+    plt.legend(loc='lower right')
+    plt.xlabel('time [s]')
     plt.title(seriesDirectory)
     plt.show()
-'''
-    plt.figure()
-    librosa.display.waveplot(validatedImpulses[0,:], samplingRate)
-    plt.title('Signal')
-    plt.show()
-'''
