@@ -1,13 +1,7 @@
 import numpy as np
-from scipy import signal
 import os
 import matplotlib.pyplot as plt
-import librosa
-import librosa.display
-import math
 import shutil
-import csv
-
 
 
 inputDirectory = "AnalyzerOutputFolder"
@@ -20,7 +14,6 @@ os.mkdir(outputDirectory)
 
 dataArray = np.load(inputDirectory + '/' + dataFileName + '.npy')
 seriesNames = dataArray[0,1:]
-print(seriesNames)
 dataArray = np.delete(dataArray, 0, 0)
 parameterNumber, sampleNumber = dataArray.shape
 
