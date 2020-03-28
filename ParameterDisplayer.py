@@ -31,6 +31,14 @@ for parameter in range((parameterNumber)//2):
         deviations = deviations.astype(np.float)
         parameterName = dataArray[parameter*2,0]
 
-        plt.errorbar(seriesNames, values, deviations)
+        plt.errorbar(seriesNames, values, deviations, fmt='ko', ecolor='b', elinewidth=1.5, capsize=20)
+        plt.title(parameterName)
+        plt.grid(True)
+
+        outputFile = outputDirectory + '/' + parameterName
+        figure = plt.gcf()
+        figure.set_size_inches(19.2, 10.8)
+        plt.savefig(outputFile, dpi=100)
+
         plt.show()
 
