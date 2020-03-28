@@ -6,9 +6,9 @@ import librosa.display
 import math
 import shutil
 
-def FindPeaks(signal, samplingRate, threshold = -1, reachBackTime = 0.05, reachAheadTime = 0.1): #returns sample numbers of all offsets that exceed threshold
+def FindPeaks(signal, samplingRate, threshold = -1, reachBackTime = 0.1, reachAheadTime = 0.2): #returns sample numbers of all offsets that exceed threshold
     if threshold == -1:
-        threshold = 0.8 * np.amax(signal)
+        threshold = 0.7 * np.amax(signal)
     DetectedOffsets = librosa.onset.onset_detect(signal, samplingRate, backtrack=False, units="samples")
     parsingIndicator = []
 
@@ -28,7 +28,7 @@ def FindPeaks(signal, samplingRate, threshold = -1, reachBackTime = 0.05, reachA
 
     return parsingIndicator
 
-def RemoveDuplicatePeaks(peaks, samplingRate, minimalTimeDifference = 5): #trims peak list of all duplicates that are closer to each other then the minimalTimeDifference
+def RemoveDuplicatePeaks(peaks, samplingRate, minimalTimeDifference = 1): #trims peak list of all duplicates that are closer to each other then the minimalTimeDifference
     for i in range(0, len(peaks) - 1):
         if peaks[i] + samplingRate * minimalTimeDifference > peaks[i+1]:
             peaks[i+1] = 0
@@ -39,24 +39,36 @@ def RemoveDuplicatePeaks(peaks, samplingRate, minimalTimeDifference = 5): #trims
 def ParseImpulses(signal, samplingRate, peaks, attackTime = 0.05, decayTime = 7): #returns array which has rows of impulses cut from the main signal around the found peaks
     impulses = []
     for el in peaks:
-        impuls = signal[list(range(el - math.floor(attackTime * samplingRate), math.floor(el + decayTime * samplingRate)))]
-        if impulses == []: #Not very elegant
-            impulses = impuls
-        else:
-            impulses = np.vstack([impulses, impuls])
+        if el + decayTime * samplingRate < len(signal):
+            impuls = signal[list(range(el - math.floor(attackTime * samplingRate), math.floor(el + decayTime * samplingRate)))]
+            if impulses == []: #Not very elegant
+                impulses = impuls
+            else:
+                impulses = np.vstack([impulses, impuls])
     return impulses
 
-def RemoveImpulsesWithEnergyDeviation(impulses, acceptableDeviation = 0.3, impulsPeaks = []): #trims impulses that have too large of a energy deviation from the mean
-    impulsEnergies = []
+def RemoveImpulsesWithEnergyDeviation(impulses, acceptableDeviation = 0.3, impulsPeaks = [], attackTime = 2, acceptableAttackDeviation = 0.6): #trims impulses that have too large of a energy deviation from the mean
+    impulsEnergies, attackEnergies = [], []
     for i in range (0, len(impulses[:,0])):
         impulsEnergies.append(sum((impulses[i,:]) * (impulses[i,:])))
+        attackEnergies.append(sum((impulses[i,:attackTime*samplingRate]) * (impulses[i,:attackTime*samplingRate])))
     meanEnergy = sum(impulsEnergies)/len(impulsEnergies)
+    maxAttackEnergy = max(attackEnergies)
     i = 0
     for el in impulsEnergies:
         if el > meanEnergy * (1 + acceptableDeviation) or el < meanEnergy * (1 - acceptableDeviation):
             impulses = np.delete(impulses, i, axis=0)
             impulsPeaks = np.delete(impulsPeaks, i)
+            attackEnergies = np.delete(attackEnergies, i)
             print("Energy Deviation Detected!")
+        else:
+            i += 1
+    i = 0
+    for el in attackEnergies:
+        if el < maxAttackEnergy * (1 - acceptableAttackDeviation):
+            impulses = np.delete(impulses, i, axis=0)
+            impulsPeaks = np.delete(impulsPeaks, i)
+            print("Early Energy Deviation Detected!")
         else:
             i += 1
     return impulses, impulsPeaks
