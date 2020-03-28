@@ -6,9 +6,9 @@ import librosa.display
 import math
 import shutil
 
-def FindPeaks(signal, samplingRate, threshold = -1, reachBackTime = 0.1, reachAheadTime = 0.2): #returns sample numbers of all offsets that exceed threshold
+def FindPeaks(signal, samplingRate, thresholdPercentage = 0.7, threshold = -1, reachBackTime = 0.1, reachAheadTime = 0.2): #returns sample numbers of all offsets that exceed threshold
     if threshold == -1:
-        threshold = 0.7 * np.amax(signal)
+        threshold = thresholdPercentage * np.amax(signal)
     DetectedOffsets = librosa.onset.onset_detect(signal, samplingRate, backtrack=False, units="samples")
     parsingIndicator = []
 
@@ -28,11 +28,14 @@ def FindPeaks(signal, samplingRate, threshold = -1, reachBackTime = 0.1, reachAh
 
     return parsingIndicator
 
-def RemoveDuplicatePeaks(peaks, samplingRate, minimalTimeDifference = 1): #trims peak list of all duplicates that are closer to each other then the minimalTimeDifference
-    for i in range(0, len(peaks) - 1):
+def RemoveDuplicatePeaks(peaks, samplingRate, minimalTimeDifference = 1, impulseDecayTime = 0, signalLength = 0): #trims peak list of all duplicates that are closer to each other then the minimalTimeDifference or closer to the end then the impulseDecayTime
+    for i in range(0, len(peaks)-1):
         if peaks[i] + samplingRate * minimalTimeDifference > peaks[i+1]:
             peaks[i+1] = 0
             print('Duplicate peaks detected!')
+    if signalLength != 0 and peaks[-1] + impulseDecayTime * samplingRate > signalLength:
+        peaks[-1] = 0
+        print("Peak too close to end of signal. Peak removed")
     peaks = np.ma.masked_equal(peaks,0).compressed()
     return peaks
 
@@ -45,6 +48,8 @@ def ParseImpulses(signal, samplingRate, peaks, attackTime = 0.05, decayTime = 7)
                 impulses = impuls
             else:
                 impulses = np.vstack([impulses, impuls])
+        else:
+            print("Peak too close to end of signal. Impulse not parsed")
     return impulses
 
 def RemoveImpulsesWithEnergyDeviation(impulses, acceptableDeviation = 0.3, impulsPeaks = [], attackTime = 2, acceptableAttackDeviation = 0.6): #trims impulses that have too large of a energy deviation from the mean
@@ -80,13 +85,29 @@ def WriteParsedImpulsesToFolder(impulses, sampleRate, outputDirectory, seriesDir
         filename = path + "/" + seriesDirectory + "_" + str(i) + ".wav"
         librosa.output.write_wav(filename, impulses[i,:], sampleRate)
 
-# main
+# ----------------- Controls -------------------
+# Directories
 inputDirectory = "InputFolder"
 outputDirectory = "ParserOutputFolder"
+
+# Peak detection
+threshold = 0.6
+minimalTimeDifference = 1
+
+# Impulse parsing
+attackTime = 0.05
+decayTime = 7
+
+# Energy validation of impulses
+acceptableEnergyDeviation = 0.15
+attackEnergyTime = 2
+attackEnergyDeviation = 0.6
+
 
 if os.path.isdir(outputDirectory):
         shutil.rmtree(outputDirectory)
 os.mkdir(outputDirectory)
+
 
 for seriesSignal in os.listdir(os.fsencode(inputDirectory)):
     inputSignal = inputDirectory + "/" + os.fsdecode(seriesSignal)
@@ -94,10 +115,10 @@ for seriesSignal in os.listdir(os.fsencode(inputDirectory)):
 
     signal, samplingRate = lbr.load(inputSignal)
 
-    foundPeaks = FindPeaks(signal, samplingRate)
-    foundPeaks = RemoveDuplicatePeaks(foundPeaks, samplingRate)
-    foundImpulses = ParseImpulses(signal, samplingRate, foundPeaks)
-    validatedImpulses, validatedPeaks = RemoveImpulsesWithEnergyDeviation(foundImpulses, 0.17, foundPeaks)
+    foundPeaks = FindPeaks(signal, samplingRate, threshold)
+    foundPeaks = RemoveDuplicatePeaks(foundPeaks, samplingRate, minimalTimeDifference, decayTime, len(signal))
+    foundImpulses = ParseImpulses(signal, samplingRate, foundPeaks, attackTime, decayTime)
+    validatedImpulses, validatedPeaks = RemoveImpulsesWithEnergyDeviation(foundImpulses, acceptableEnergyDeviation, foundPeaks, attackEnergyTime, attackEnergyDeviation)
     WriteParsedImpulsesToFolder(validatedImpulses, samplingRate, outputDirectory, seriesDirectory)
 
     parsingIndicator = np.zeros(len(signal))
@@ -113,9 +134,9 @@ for seriesSignal in os.listdir(os.fsencode(inputDirectory)):
     timeVector = np.arange(0, len(signal)/samplingRate, 1/samplingRate)
     ylimit = max(abs(signal)) * 1.2
     plt.figure()
-    plt.plot(timeVector, signal, 'b', label='Signal')
+    plt.plot(timeVector, signal, color='grey', label='Signal')
     plt.plot(timeVector, parsingIndicator, 'r', label='Discarded peaks')
-    plt.plot(timeVector, validatedIndicator, 'g', label='Accepted peaks')
+    plt.plot(timeVector, validatedIndicator, color = 'chartreuse', label='Accepted peaks')
     plt.ylim(-ylimit, ylimit)
     plt.legend(loc='lower right')
     plt.xlabel('time [s]')
