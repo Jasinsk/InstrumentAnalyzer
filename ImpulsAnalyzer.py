@@ -99,8 +99,7 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
 
     outputFile = seriesDirectory.replace(inputDirectory, outputDirectory)
     print("Outputing to: " + outputFile)
-    #if os.path.isfile(seriesDirectory + ".png"):
-    #    os.remove(seriesDirectory + ".png")
+
     figure = plt.gcf()
     figure.set_size_inches(19.2, 10.8)
     plt.savefig(outputFile, dpi = 100)
