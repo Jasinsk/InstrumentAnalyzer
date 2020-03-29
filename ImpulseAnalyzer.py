@@ -21,7 +21,6 @@ def CalculateAverageVector(Vectors): #Takes a vector of vectors and calculates a
     return averageVector
 
 def CalculateFFTs(takes, samplingRate, attackTime, sustainTime): #Takes array of impulses and creates array of spectrums
-
     attackSpectrums, sustainSpectrums, decaySpectrums = [], [], []
     attackFrequencies, sustainFrequencies, decayFrequencies = 0, 0, 0
     for take in takes:
@@ -83,19 +82,26 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     rms_values.append(np.mean(rmss))
     rms_deviations.append(np.std(rmss))
 
+    plt.suptitle(seriesDirectory.replace(inputDirectory + '/', ''), fontsize='xx-large')
+
     plt.subplot(131)
     plt.plot(attackFrequencies, avrAttackSpectrum)
-    plt.title(seriesDirectory)
     plt.xlim([0, 3000])
+    plt.xlabel('frequency [Hz]')
+    plt.title('0 - ' + str(attackTime) + ' [s]')
 
     plt.subplot(132)
     plt.plot(sustainFrequencies, avrSustainSpectrum)
+    plt.title(seriesDirectory)
     plt.xlim([0, 3000])
+    plt.xlabel('frequency [Hz]')
+    plt.title(str(attackTime) + ' - ' + str(sustainTime) + ' [s]')
 
     plt.subplot(133)
     plt.plot(decayFrequencies, avrDecaySpectrum)
     plt.xlim([0, 3000])
     plt.xlabel('frequency [Hz]')
+    plt.title(str(sustainTime) + ' - ' + str(round(len(impulses[0,:])/samplingRate, 2)) + ' [s]')
 
     outputFile = seriesDirectory.replace(inputDirectory, outputDirectory)
     print("Outputing to: " + outputFile)

@@ -33,5 +33,8 @@ for parameter in range((parameterNumber)//2):
         figure.set_size_inches(19.2, 10.8)
         plt.savefig(outputFile, dpi=100)
 
-        plt.show()
+        #plt.show()
+        plt.clf()
+
+        print('Figure saved as: ' + outputFile)
 

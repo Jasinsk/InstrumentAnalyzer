@@ -56,7 +56,7 @@ def RemoveImpulsesWithEnergyDeviation(impulses, acceptableDeviation = 0.3, impul
     impulsEnergies, attackEnergies = [], []
     for i in range (0, len(impulses[:,0])):
         impulsEnergies.append(sum((impulses[i,:]) * (impulses[i,:])))
-        attackEnergies.append(sum((impulses[i,:attackTime*samplingRate]) * (impulses[i,:attackTime*samplingRate])))
+        attackEnergies.append(sum((impulses[i,:round(attackTime*samplingRate)]) * (impulses[i,:round(attackTime*samplingRate)])))
     meanEnergy = sum(impulsEnergies)/len(impulsEnergies)
     maxAttackEnergy = max(attackEnergies)
     i = 0
@@ -99,15 +99,14 @@ attackTime = 0.05
 decayTime = 7
 
 # Energy validation of impulses
-acceptableEnergyDeviation = 0.15
-attackEnergyTime = 2
-attackEnergyDeviation = 0.6
-
+acceptableEnergyDeviation = 0.25
+attackEnergyTime = 1.5
+attackEnergyDeviation = 0.5
+# ---------------------------------------------
 
 if os.path.isdir(outputDirectory):
         shutil.rmtree(outputDirectory)
 os.mkdir(outputDirectory)
-
 
 for seriesSignal in os.listdir(os.fsencode(inputDirectory)):
     inputSignal = inputDirectory + "/" + os.fsdecode(seriesSignal)
