@@ -3,6 +3,7 @@ import os
 import matplotlib.pyplot as plt
 import shutil
 
+# This script accepts a data file saved by ImpulseAnalyzer.py, displays the data and saves the plot into the output directory.
 
 inputDirectory = "AnalyzerOutputFolder"
 outputDirectory = "DisplayerOutputFolder"

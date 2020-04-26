@@ -8,6 +8,10 @@ import math
 import shutil
 import csv
 
+# This script accepts folders with individually parsed impulses and calculates an averaged spectrum for each directory.
+# The plots of these results are saved into the output directory.
+# Spectral and energy parameters are also calculated and saved into the output directory.
+
 def InsertIntoVstack(vector, stack):
     if stack == []:  # Not very elegant way to make sure the first impulse is loaded in correctly
         stack = vector

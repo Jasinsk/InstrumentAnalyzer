@@ -6,6 +6,10 @@ import librosa.display
 import math
 import shutil
 
+# This script takes .wav files that are recordings of impuls series and parses each individual impuls into a seperate file.
+# Each recording put into the input folder is parsed into a seperate folder inside the output directory
+# Impulses are only parsed if the peak meets both the temporal and energetic requirements.
+
 def FindPeaks(signal, samplingRate, thresholdPercentage = 0.7, threshold = -1, reachBackTime = 0.1, reachAheadTime = 0.2): #returns sample numbers of all offsets that exceed threshold
     if threshold == -1:
         threshold = thresholdPercentage * np.amax(signal)
