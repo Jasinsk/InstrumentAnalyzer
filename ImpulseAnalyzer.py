@@ -57,7 +57,14 @@ sustainTime = 1.3
 
 #These variables are used to save the parameter data to a csv file
 data_array = []
-series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values, rms_deviations, attackRMS_values, attackRMS_deviations, sustainRMS_values, sustainRMS_deviations, decayRMS_values, decayRMS_deviations = [" "], ["Spectrum Centroid"], ["Centroid Deviation"], ["Rolloff"], ["Rolloff Deviation"], ["RMS"], ["RMS Deviation"], ["Attack RMS"], ["Attack RMS Deviation"], ["Sustain RMS"], ["Sustain RMS Deviation"], ["Decay RMS"], ["Decay RMS Deviation"]
+series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values, rms_deviations, \
+    bandwidth_values, bandwidth_deviation, attackRMS_values, attackRMS_deviations, sustainRMS_values, \
+    sustainRMS_deviations, decayRMS_values, decayRMS_deviations = [" "], ["Spectrum Centroid"], ["Centroid Deviation"], \
+                                                    ["Rolloff"], ["Rolloff Deviation"], ["RMS"], ["RMS Deviation"], \
+                                                    ["Bandwidth"], ["Bandwidth Deviation"], ["Attack RMS"], \
+                                                    ["Attack RMS Deviation"], ["Sustain RMS"], ["Sustain RMS Deviation"], \
+                                                    ["Decay RMS"], ["Decay RMS Deviation"]
+
 
 
 #These are used as a y axis limits in the final spectrums to have them all have the same axis limits for easier comparison
@@ -69,7 +76,7 @@ decayMaxValue = 1.5e-05
 for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     seriesDirectory = inputDirectory + "/" + os.fsdecode(seriesDirectory)
     print("Entering folder: " + seriesDirectory)
-    impulses, centroids, rolloffs, rmss = [], [], [], []
+    impulses, centroids, rolloffs, rmss, bandwidths = [], [], [], [], []
 
     for impulseFile in os.listdir(os.fsencode(seriesDirectory)):
         impulseFileName = seriesDirectory + "/" + os.fsdecode(impulseFile)
@@ -78,11 +85,13 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
 
         centroids.append(np.mean(librosa.feature.spectral_centroid(impulse)))
         rolloffs.append(np.mean(librosa.feature.spectral_rolloff(impulse)))
+        bandwidths.append(np.mean(librosa.feature.spectral_bandwidth((impulse))))
         rmss.append(CalculateRMS(impulse))
 
         impulses = InsertIntoVstack(impulse, impulses)
 
-    attackFrequencies, attackSpectrums, sustainFrequencies, sustainSpectrums, decayFrequencies, decaySpectrums = CalculateFFTs(impulses, samplingRate, attackTime, sustainTime)
+    attackFrequencies, attackSpectrums, sustainFrequencies, sustainSpectrums, decayFrequencies, decaySpectrums = \
+        CalculateFFTs(impulses, samplingRate, attackTime, sustainTime)
     avrAttackSpectrum = CalculateAverageVector(attackSpectrums)
     avrSustainSpectrum = CalculateAverageVector(sustainSpectrums)
     avrDecaySpectrum = CalculateAverageVector(decaySpectrums)
@@ -93,6 +102,8 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     centroid_deviations.append(np.std(centroids))
     rolloff_values.append(np.mean(rolloffs))
     rolloff_deviations.append(np.std(rolloffs))
+    bandwidth_values.append(np.mean(bandwidths))
+    bandwidth_deviation.append((np.std(bandwidths)))
     rms_values.append(np.mean(rmss))
     rms_deviations.append(np.std(rmss))
 
@@ -156,7 +167,9 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     #plt.show()
     plt.clf()
 
-data_array = np.vstack([series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values, rms_deviations, attackRMS_values, attackRMS_deviations, sustainRMS_values, sustainRMS_deviations, decayRMS_values, decayRMS_deviations])
+data_array = np.vstack([series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values,
+                        rms_deviations, bandwidth_values, bandwidth_deviation, attackRMS_values, attackRMS_deviations,
+                        sustainRMS_values, sustainRMS_deviations, decayRMS_values, decayRMS_deviations])
 
 np.save(outputDirectory + '/' + dataFileName + '.npy', data_array)
 with open(outputDirectory + '/' + dataFileName + '.csv', 'w', newline='') as csvfile:
@@ -168,6 +181,8 @@ with open(outputDirectory + '/' + dataFileName + '.csv', 'w', newline='') as csv
     dataWriter.writerow(rms_deviations)
     dataWriter.writerow(rolloff_values)
     dataWriter.writerow(rolloff_deviations)
+    dataWriter.writerow(bandwidth_values)
+    dataWriter.writerow(bandwidth_deviation)
     dataWriter.writerow(attackRMS_values)
     dataWriter.writerow(attackRMS_deviations)
     dataWriter.writerow(sustainRMS_values)

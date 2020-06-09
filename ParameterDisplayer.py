@@ -62,4 +62,9 @@ plt.legend(['Attack', 'Sustain', 'Decay'])
 plt.title("Normalized Energy Segment Comparison")
 plt.grid(True)
 
-plt.show()
+outputFile = outputDirectory + '/' + 'Segment Energy Comparison'
+figure = plt.gcf()
+figure.set_size_inches(19.2, 10.8)
+plt.savefig(outputFile, dpi=100)
+
+#plt.show()
