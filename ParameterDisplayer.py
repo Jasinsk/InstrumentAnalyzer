@@ -60,6 +60,7 @@ plt.plot(seriesNames, sustainRMS, 'bs')
 plt.plot(seriesNames, decayRMS, 'cs')
 plt.legend(['Attack', 'Sustain', 'Decay'])
 plt.title("Normalized Energy Segment Comparison")
+plt.yticks([])
 plt.grid(True)
 
 outputFile = outputDirectory + '/' + 'Segment Energy Comparison'

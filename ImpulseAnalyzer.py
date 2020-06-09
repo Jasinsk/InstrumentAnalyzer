@@ -64,19 +64,15 @@ series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_devi
                                                     ["Bandwidth"], ["Bandwidth Deviation"], ["Attack RMS"], \
                                                     ["Attack RMS Deviation"], ["Sustain RMS"], ["Sustain RMS Deviation"], \
                                                     ["Decay RMS"], ["Decay RMS Deviation"]
+allAttackSpectrums, allSustainSpectrums, allDecaySpectrums, allAttackFrequencies, allSustainFrequencies, \
+        allDecayFrequencies, seriesNames = [], [], [], [], [], [], []
+impulseTime, maxAttack, maxSustain, maxDecay = 0, 0, 0, 0
 
-
-
-#These are used as a y axis limits in the final spectrums to have them all have the same axis limits for easier comparison
-useLimits = True
-attackMaxValue = 0.007
-sustainMaxValue = 0.00085
-decayMaxValue = 1.5e-05
-
+# Calculating spectrums and parameters
 for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     seriesDirectory = inputDirectory + "/" + os.fsdecode(seriesDirectory)
     print("Entering folder: " + seriesDirectory)
-    impulses, centroids, rolloffs, rmss, bandwidths = [], [], [], [], []
+    impulses, attackSpectrums, sustainSpectrums, decaySpectrums, centroids, rolloffs, rmss, bandwidths = [], [], [], [], [], [], [], []
 
     for impulseFile in os.listdir(os.fsencode(seriesDirectory)):
         impulseFileName = seriesDirectory + "/" + os.fsdecode(impulseFile)
@@ -92,9 +88,22 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
 
     attackFrequencies, attackSpectrums, sustainFrequencies, sustainSpectrums, decayFrequencies, decaySpectrums = \
         CalculateFFTs(impulses, samplingRate, attackTime, sustainTime)
+
     avrAttackSpectrum = CalculateAverageVector(attackSpectrums)
     avrSustainSpectrum = CalculateAverageVector(sustainSpectrums)
     avrDecaySpectrum = CalculateAverageVector(decaySpectrums)
+
+    allAttackSpectrums.append(avrAttackSpectrum)
+    allSustainSpectrums.append(avrSustainSpectrum)
+    allDecaySpectrums.append(avrDecaySpectrum)
+    allAttackFrequencies.append(attackFrequencies)
+    allSustainFrequencies.append(sustainFrequencies)
+    allDecayFrequencies.append(decayFrequencies)
+    seriesNames.append(seriesDirectory)
+    impulseTime = len(impulses[0,:])/samplingRate
+    maxAttack = max([maxAttack, max(avrAttackSpectrum)])
+    maxSustain = max([maxSustain, max(avrSustainSpectrum)])
+    maxDecay = max([maxDecay, max(avrDecaySpectrum)])
 
     seriesName = seriesDirectory.replace(inputDirectory + "/", "")
     series_names.append(seriesName)
@@ -107,24 +116,6 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     rms_values.append(np.mean(rmss))
     rms_deviations.append(np.std(rmss))
 
-    ylimit = max(avrAttackSpectrum)
-
-    plt.suptitle(seriesDirectory.replace(inputDirectory + '/', ''), fontsize='xx-large')
-
-    if useLimits == True:
-        attackYLimit = attackMaxValue * 1.05
-        sustainYLimit = sustainMaxValue * 1.05
-        decayYLimit = decayMaxValue * 1.05
-
-    else:
-        attackYLimit = max(avrAttackSpectrum) * 1.05
-        sustainYLimit = max(avrSustainSpectrum) * 1.05
-        decayYLimit = max(avrDecaySpectrum) * 1.05
-
-    attackMaxValue = max(attackMaxValue, max(avrAttackSpectrum))
-    sustainMaxValue = max(sustainMaxValue, max(avrSustainSpectrum))
-    decayMaxValue = max(decayMaxValue, max(avrDecaySpectrum))
-
     attackRMS_values.append(CalculateRMS(avrAttackSpectrum))
     attackRMS_deviations.append(0)
     sustainRMS_values.append(CalculateRMS(avrSustainSpectrum))
@@ -132,44 +123,11 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     decayRMS_values.append(CalculateRMS(avrDecaySpectrum))
     decayRMS_deviations.append(0)
 
-    plt.subplot(131)
-    plt.plot(attackFrequencies, avrAttackSpectrum)
-    plt.xlim([0, 3000])
-    plt.ylim([0,attackYLimit])
-    plt.xlabel('frequency [Hz]')
-    plt.title('0 - ' + str(attackTime) + ' [s]')
-    plt.text(1500, attackYLimit*0.95, str('Energy = ' + str(CalculateRMS(avrAttackSpectrum))))
-
-    plt.subplot(132)
-    plt.plot(sustainFrequencies, avrSustainSpectrum)
-    plt.title(seriesDirectory)
-    plt.xlim([0, 3000])
-    plt.ylim([0, sustainYLimit])
-    plt.xlabel('frequency [Hz]')
-    plt.title(str(attackTime) + ' - ' + str(sustainTime) + ' [s]')
-    plt.text(1500, sustainYLimit * 0.95, str('Energy = ' + str(CalculateRMS(avrSustainSpectrum))))
-
-    plt.subplot(133)
-    plt.plot(decayFrequencies, avrDecaySpectrum)
-    plt.xlim([0, 3000])
-    plt.ylim([0, decayYLimit])
-    plt.xlabel('frequency [Hz]')
-    plt.title(str(sustainTime) + ' - ' + str(round(len(impulses[0,:])/samplingRate, 2)) + ' [s]')
-    plt.text(1500, decayYLimit * 0.95, str('Energy = ' + str(CalculateRMS(avrDecaySpectrum))))
-
-
-    outputFile = seriesDirectory.replace(inputDirectory, outputDirectory)
-    print("Outputing to: " + outputFile)
-
-    figure = plt.gcf()
-    figure.set_size_inches(19.2, 10.8)
-    plt.savefig(outputFile, dpi = 100)
-    #plt.show()
-    plt.clf()
-
-data_array = np.vstack([series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values,
-                        rms_deviations, bandwidth_values, bandwidth_deviation, attackRMS_values, attackRMS_deviations,
-                        sustainRMS_values, sustainRMS_deviations, decayRMS_values, decayRMS_deviations])
+# Saving the parameter data
+data_array = np.vstack(
+    [series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values,
+     rms_deviations, bandwidth_values, bandwidth_deviation, attackRMS_values, attackRMS_deviations,
+     sustainRMS_values, sustainRMS_deviations, decayRMS_values, decayRMS_deviations])
 
 np.save(outputDirectory + '/' + dataFileName + '.npy', data_array)
 with open(outputDirectory + '/' + dataFileName + '.csv', 'w', newline='') as csvfile:
@@ -192,9 +150,44 @@ with open(outputDirectory + '/' + dataFileName + '.csv', 'w', newline='') as csv
 
 print("Data saved to: " + dataFileName)
 
-print("Max Attack Value: " + str(attackMaxValue))
-print("Max Sustain Value: " + str(sustainMaxValue))
-print("Max Decay Value: " + str(decayMaxValue))
+# Drawing spectrum plots
+for iterator in range(0, len(seriesNames)):
+
+    plt.suptitle(seriesNames[iterator].replace(inputDirectory, ''), fontsize='xx-large')
+
+    plt.subplot(131)
+    plt.plot(allAttackFrequencies[iterator], allAttackSpectrums[iterator])
+    plt.xlim([0, 3000])
+    plt.ylim([0, maxAttack * 1.02])
+    plt.xlabel('frequency [Hz]')
+    plt.title('0 - ' + str(attackTime) + ' [s]')
+    plt.text(1500, maxAttack, str('Energy = ' + str(CalculateRMS(allAttackSpectrums[iterator]))))
+
+    plt.subplot(132)
+    plt.plot(allSustainFrequencies[iterator], allSustainSpectrums[iterator])
+    plt.xlim([0, 3000])
+    plt.ylim([0, maxSustain * 1.02])
+    plt.xlabel('frequency [Hz]')
+    plt.title(str(attackTime) + ' - ' + str(sustainTime) + ' [s]')
+    plt.text(1500, maxSustain, str('Energy = ' + str(CalculateRMS(allSustainSpectrums[iterator]))))
+
+    plt.subplot(133)
+    plt.plot(allDecayFrequencies[iterator], allDecaySpectrums[iterator])
+    plt.xlim([0, 3000])
+    plt.ylim([0, maxDecay * 1.02])
+    plt.xlabel('frequency [Hz]')
+    plt.title(str(sustainTime) + ' - ' + str(round(impulseTime, 2)) + ' [s]')
+    plt.text(1500, maxDecay, str('Energy = ' + str(CalculateRMS(allDecaySpectrums[iterator]))))
+
+
+    outputFile = seriesNames[iterator].replace(inputDirectory, outputDirectory)
+    print("Outputing to: " + outputFile)
+
+    figure = plt.gcf()
+    figure.set_size_inches(19.2, 10.8)
+    plt.savefig(outputFile, dpi = 100)
+    #plt.show()
+    plt.clf()
 
 
 
