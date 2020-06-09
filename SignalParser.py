@@ -62,7 +62,7 @@ def RemoveImpulsesWithEnergyDeviation(impulses, acceptableDeviation = 0.3, impul
         impulsEnergies.append(sum((impulses[i,:]) * (impulses[i,:])))
         attackEnergies.append(sum((impulses[i,:round(attackTime*samplingRate)]) * (impulses[i,:round(attackTime*samplingRate)])))
     meanEnergy = sum(impulsEnergies)/len(impulsEnergies)
-    maxAttackEnergy = max(attackEnergies)
+    meanAttackEnergy = sum(attackEnergies)/len(attackEnergies)
     i = 0
     for el in impulsEnergies:
         if el > meanEnergy * (1 + acceptableDeviation) or el < meanEnergy * (1 - acceptableDeviation):
@@ -74,7 +74,7 @@ def RemoveImpulsesWithEnergyDeviation(impulses, acceptableDeviation = 0.3, impul
             i += 1
     i = 0
     for el in attackEnergies:
-        if el < maxAttackEnergy * (1 - acceptableAttackDeviation):
+        if el < meanAttackEnergy * (1 - acceptableAttackDeviation):
             impulses = np.delete(impulses, i, axis=0)
             impulsPeaks = np.delete(impulsPeaks, i)
             print("Early Energy Deviation Detected!")
@@ -95,17 +95,17 @@ inputDirectory = "InputFolder"
 outputDirectory = "ParserOutputFolder"
 
 # Peak detection
-threshold = 0.6
+threshold = 0.5
 minimalTimeDifference = 1
 
 # Impulse parsing
 attackTime = 0.05
-decayTime = 7
+decayTime = 5
 
 # Energy validation of impulses
-acceptableEnergyDeviation = 0.25
+acceptableEnergyDeviation = 0.3
 attackEnergyTime = 1.5
-attackEnergyDeviation = 0.5
+attackEnergyDeviation = 0.25
 # ---------------------------------------------
 
 if os.path.isdir(outputDirectory):

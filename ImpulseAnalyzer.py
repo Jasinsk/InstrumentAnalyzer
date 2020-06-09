@@ -56,6 +56,12 @@ sustainTime = 1.3
 data_array = []
 series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values, rms_deviations = [" "], ["Spectrum Centroid"], ["Centroid Deviation"], ["Rolloff"], ["Rolloff Deviation"], ["RMS"], ["RMS Deviation"]
 
+#These are used as a y axis limits in the final spectrums to have them all have the same axis limits for easier comparison
+useLimits = True
+attackMaxValue = 0.007
+sustainMaxValue = 0.00085
+decayMaxValue = 1.5e-05
+
 for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     seriesDirectory = inputDirectory + "/" + os.fsdecode(seriesDirectory)
     print("Entering folder: " + seriesDirectory)
@@ -86,11 +92,28 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     rms_values.append(np.mean(rmss))
     rms_deviations.append(np.std(rmss))
 
+    ylimit = max(avrAttackSpectrum)
+
     plt.suptitle(seriesDirectory.replace(inputDirectory + '/', ''), fontsize='xx-large')
+
+    if useLimits == True:
+        attackYLimit = attackMaxValue * 1.05
+        sustainYLimit = sustainMaxValue * 1.05
+        decayYLimit = decayMaxValue * 1.05
+
+    else:
+        attackYLimit = max(avrAttackSpectrum) * 1.05
+        sustainYLimit = max(avrSustainSpectrum) * 1.05
+        decayYLimit = max(avrDecaySpectrum) * 1.05
+
+    attackMaxValue = max(attackMaxValue, max(avrAttackSpectrum))
+    sustainMaxValue = max(sustainMaxValue, max(avrSustainSpectrum))
+    decayMaxValue = max(decayMaxValue, max(avrDecaySpectrum))
 
     plt.subplot(131)
     plt.plot(attackFrequencies, avrAttackSpectrum)
     plt.xlim([0, 3000])
+    plt.ylim([0,attackYLimit])
     plt.xlabel('frequency [Hz]')
     plt.title('0 - ' + str(attackTime) + ' [s]')
 
@@ -98,12 +121,14 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     plt.plot(sustainFrequencies, avrSustainSpectrum)
     plt.title(seriesDirectory)
     plt.xlim([0, 3000])
+    plt.ylim([0, sustainYLimit])
     plt.xlabel('frequency [Hz]')
     plt.title(str(attackTime) + ' - ' + str(sustainTime) + ' [s]')
 
     plt.subplot(133)
     plt.plot(decayFrequencies, avrDecaySpectrum)
     plt.xlim([0, 3000])
+    plt.ylim([0, decayYLimit])
     plt.xlabel('frequency [Hz]')
     plt.title(str(sustainTime) + ' - ' + str(round(len(impulses[0,:])/samplingRate, 2)) + ' [s]')
 
@@ -130,6 +155,11 @@ with open(outputDirectory + '/' + dataFileName + '.csv', 'w', newline='') as csv
     dataWriter.writerow(rolloff_deviations)
 
 print("Data saved to: " + dataFileName)
+
+print("Max Attack Value: " + str(attackMaxValue))
+print("Max Sustain Value: " + str(sustainMaxValue))
+print("Max Decay Value: " + str(decayMaxValue))
+
 
 
 
