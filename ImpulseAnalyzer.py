@@ -38,6 +38,9 @@ def CalculateFFTs(takes, samplingRate, attackTime, sustainTime): #Takes array of
 
     return attackFrequencies, attackSpectrums, sustainFrequencies, sustainSpectrums, decayFrequencies, decaySpectrums
 
+def CalculateRMS(signal):
+    return np.sum(librosa.feature.rmse(signal))
+
 
 inputDirectory = "ParserOutputFolder"
 outputDirectory = "AnalyzerOutputFolder"
@@ -54,7 +57,8 @@ sustainTime = 1.3
 
 #These variables are used to save the parameter data to a csv file
 data_array = []
-series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values, rms_deviations = [" "], ["Spectrum Centroid"], ["Centroid Deviation"], ["Rolloff"], ["Rolloff Deviation"], ["RMS"], ["RMS Deviation"]
+series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values, rms_deviations, attackRMS_values, attackRMS_deviations, sustainRMS_values, sustainRMS_deviations, decayRMS_values, decayRMS_deviations = [" "], ["Spectrum Centroid"], ["Centroid Deviation"], ["Rolloff"], ["Rolloff Deviation"], ["RMS"], ["RMS Deviation"], ["Attack RMS"], ["Attack RMS Deviation"], ["Sustain RMS"], ["Sustain RMS Deviation"], ["Decay RMS"], ["Decay RMS Deviation"]
+
 
 #These are used as a y axis limits in the final spectrums to have them all have the same axis limits for easier comparison
 useLimits = True
@@ -74,7 +78,7 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
 
         centroids.append(np.mean(librosa.feature.spectral_centroid(impulse)))
         rolloffs.append(np.mean(librosa.feature.spectral_rolloff(impulse)))
-        rmss.append(np.mean(librosa.feature.rmse(impulse)))
+        rmss.append(CalculateRMS(impulse))
 
         impulses = InsertIntoVstack(impulse, impulses)
 
@@ -110,12 +114,20 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     sustainMaxValue = max(sustainMaxValue, max(avrSustainSpectrum))
     decayMaxValue = max(decayMaxValue, max(avrDecaySpectrum))
 
+    attackRMS_values.append(CalculateRMS(avrAttackSpectrum))
+    attackRMS_deviations.append(0)
+    sustainRMS_values.append(CalculateRMS(avrSustainSpectrum))
+    sustainRMS_deviations.append(0)
+    decayRMS_values.append(CalculateRMS(avrDecaySpectrum))
+    decayRMS_deviations.append(0)
+
     plt.subplot(131)
     plt.plot(attackFrequencies, avrAttackSpectrum)
     plt.xlim([0, 3000])
     plt.ylim([0,attackYLimit])
     plt.xlabel('frequency [Hz]')
     plt.title('0 - ' + str(attackTime) + ' [s]')
+    plt.text(1500, attackYLimit*0.95, str('Energy = ' + str(CalculateRMS(avrAttackSpectrum))))
 
     plt.subplot(132)
     plt.plot(sustainFrequencies, avrSustainSpectrum)
@@ -124,6 +136,7 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     plt.ylim([0, sustainYLimit])
     plt.xlabel('frequency [Hz]')
     plt.title(str(attackTime) + ' - ' + str(sustainTime) + ' [s]')
+    plt.text(1500, sustainYLimit * 0.95, str('Energy = ' + str(CalculateRMS(avrSustainSpectrum))))
 
     plt.subplot(133)
     plt.plot(decayFrequencies, avrDecaySpectrum)
@@ -131,6 +144,8 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     plt.ylim([0, decayYLimit])
     plt.xlabel('frequency [Hz]')
     plt.title(str(sustainTime) + ' - ' + str(round(len(impulses[0,:])/samplingRate, 2)) + ' [s]')
+    plt.text(1500, decayYLimit * 0.95, str('Energy = ' + str(CalculateRMS(avrDecaySpectrum))))
+
 
     outputFile = seriesDirectory.replace(inputDirectory, outputDirectory)
     print("Outputing to: " + outputFile)
@@ -141,7 +156,7 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     #plt.show()
     plt.clf()
 
-data_array = np.vstack([series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values, rms_deviations])
+data_array = np.vstack([series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values, rms_deviations, attackRMS_values, attackRMS_deviations, sustainRMS_values, sustainRMS_deviations, decayRMS_values, decayRMS_deviations])
 
 np.save(outputDirectory + '/' + dataFileName + '.npy', data_array)
 with open(outputDirectory + '/' + dataFileName + '.csv', 'w', newline='') as csvfile:
@@ -153,6 +168,12 @@ with open(outputDirectory + '/' + dataFileName + '.csv', 'w', newline='') as csv
     dataWriter.writerow(rms_deviations)
     dataWriter.writerow(rolloff_values)
     dataWriter.writerow(rolloff_deviations)
+    dataWriter.writerow(attackRMS_values)
+    dataWriter.writerow(attackRMS_deviations)
+    dataWriter.writerow(sustainRMS_values)
+    dataWriter.writerow(sustainRMS_deviations)
+    dataWriter.writerow(decayRMS_values)
+    dataWriter.writerow(decayRMS_deviations)
 
 print("Data saved to: " + dataFileName)
 
