@@ -39,3 +39,27 @@ for parameter in range((parameterNumber)//2):
 
         print('Figure saved as: ' + outputFile)
 
+
+# Displaying energy segment comparisons
+
+attackRMS = dataArray[parameterNumber - 6, 1:]
+attackRMS = attackRMS.astype(np.float)
+
+sustainRMS = dataArray[parameterNumber - 4, 1:]
+sustainRMS = sustainRMS.astype(np.float)
+
+decayRMS = dataArray[parameterNumber - 2, 1:]
+decayRMS = decayRMS.astype(np.float)
+
+# normalization of RMS values for easier comparison
+sustainRMS = sustainRMS * (np.mean(attackRMS)/np.mean(sustainRMS))
+decayRMS = decayRMS * (np.mean(attackRMS)/np.mean(decayRMS))
+
+plt.plot(seriesNames, attackRMS, 'ks')
+plt.plot(seriesNames, sustainRMS, 'bs')
+plt.plot(seriesNames, decayRMS, 'cs')
+plt.legend(['Attack', 'Sustain', 'Decay'])
+plt.title("Normalized Energy Segment Comparison")
+plt.grid(True)
+
+plt.show()
