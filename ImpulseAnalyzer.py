@@ -1,6 +1,9 @@
 import numpy as np
 from scipy import signal
 import os
+import obspy
+import obspy.signal
+import obspy.signal.filter
 import matplotlib.pyplot as plt
 import librosa
 import librosa.display
@@ -41,6 +44,35 @@ def CalculateFFTs(takes, samplingRate, attackTime, sustainTime): #Takes array of
 def CalculateRMS(signal):
     return np.sum(librosa.feature.rmse(signal))
 
+def CalculateDecayTime(impulse, samplingRate, windowLength = 1000, ratio = 10):
+    envelope = []
+    decayTime = 0
+    maxEnv = 0
+    peakTime = 0
+    for i in range(0,len(impulse)):
+
+        energy = CalculateRMS(impulse[i:i+windowLength])
+        if energy > maxEnv:
+            maxEnv = energy
+            peakTime = i
+
+        if energy * ratio < maxEnv:
+            decayTime = (i - peakTime)/samplingRate
+            #print('Decay Time: ' + str(decayTime))
+            break
+
+    #     if i + windowLength < len(impulse):
+    #         envelope.append(CalculateRMS(impulse[i:i+windowLength]))
+    #     else:
+    #         envelope.append(0)
+    #
+    # time = np.arange(0, len(impulse) / samplingRate, 1 / samplingRate)
+    # plt.plot(time, impulse)
+    # plt.plot(time, envelope)
+    # plt.show()
+
+    return decayTime
+
 
 inputDirectory = "ParserOutputFolder"
 outputDirectory = "AnalyzerOutputFolder"
@@ -58,10 +90,10 @@ sustainTime = 1.3
 #These variables are used to save the parameter data to a csv file
 data_array = []
 series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values, rms_deviations, \
-    bandwidth_values, bandwidth_deviation, attackRMS_values, attackRMS_deviations, sustainRMS_values, \
+    bandwidth_values, bandwidth_deviation, decayTime_values, decayTime_deviations, attackRMS_values, attackRMS_deviations, sustainRMS_values, \
     sustainRMS_deviations, decayRMS_values, decayRMS_deviations = [" "], ["Spectrum Centroid"], ["Centroid Deviation"], \
                                                     ["Rolloff"], ["Rolloff Deviation"], ["RMS"], ["RMS Deviation"], \
-                                                    ["Bandwidth"], ["Bandwidth Deviation"], ["Attack RMS"], \
+                                                    ["Bandwidth"], ["Bandwidth Deviation"], ["Decay Time"], ["Decay Time Deviation"], ["Attack RMS"], \
                                                     ["Attack RMS Deviation"], ["Sustain RMS"], ["Sustain RMS Deviation"], \
                                                     ["Decay RMS"], ["Decay RMS Deviation"]
 allAttackSpectrums, allSustainSpectrums, allDecaySpectrums, allAttackFrequencies, allSustainFrequencies, \
@@ -72,7 +104,7 @@ impulseTime, maxAttack, maxSustain, maxDecay = 0, 0, 0, 0
 for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     seriesDirectory = inputDirectory + "/" + os.fsdecode(seriesDirectory)
     print("Entering folder: " + seriesDirectory)
-    impulses, attackSpectrums, sustainSpectrums, decaySpectrums, centroids, rolloffs, rmss, bandwidths = [], [], [], [], [], [], [], []
+    impulses, attackSpectrums, sustainSpectrums, decaySpectrums, centroids, rolloffs, rmss, bandwidths, decayTimes = [], [], [], [], [], [], [], [], []
 
     for impulseFile in os.listdir(os.fsencode(seriesDirectory)):
         impulseFileName = seriesDirectory + "/" + os.fsdecode(impulseFile)
@@ -83,6 +115,7 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
         rolloffs.append(np.mean(librosa.feature.spectral_rolloff(impulse)))
         bandwidths.append(np.mean(librosa.feature.spectral_bandwidth((impulse))))
         rmss.append(CalculateRMS(impulse))
+        decayTimes.append(CalculateDecayTime(impulse, samplingRate))
 
         impulses = InsertIntoVstack(impulse, impulses)
 
@@ -115,6 +148,8 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     bandwidth_deviation.append((np.std(bandwidths)))
     rms_values.append(np.mean(rmss))
     rms_deviations.append(np.std(rmss))
+    decayTime_values.append(np.mean(decayTimes))
+    decayTime_deviations.append(np.std(decayTimes))
 
     attackRMS_values.append(CalculateRMS(avrAttackSpectrum))
     attackRMS_deviations.append(0)
@@ -126,7 +161,7 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
 # Saving the parameter data
 data_array = np.vstack(
     [series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values,
-     rms_deviations, bandwidth_values, bandwidth_deviation, attackRMS_values, attackRMS_deviations,
+     rms_deviations, bandwidth_values, bandwidth_deviation, decayTime_values, decayTime_deviations, attackRMS_values, attackRMS_deviations,
      sustainRMS_values, sustainRMS_deviations, decayRMS_values, decayRMS_deviations])
 
 np.save(outputDirectory + '/' + dataFileName + '.npy', data_array)
@@ -141,6 +176,8 @@ with open(outputDirectory + '/' + dataFileName + '.csv', 'w', newline='') as csv
     dataWriter.writerow(rolloff_deviations)
     dataWriter.writerow(bandwidth_values)
     dataWriter.writerow(bandwidth_deviation)
+    dataWriter.writerow(decayTime_values)
+    dataWriter.writerow(decayTime_deviations)
     dataWriter.writerow(attackRMS_values)
     dataWriter.writerow(attackRMS_deviations)
     dataWriter.writerow(sustainRMS_values)
