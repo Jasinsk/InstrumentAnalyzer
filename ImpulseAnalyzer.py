@@ -61,16 +61,6 @@ def CalculateDecayTime(impulse, samplingRate, windowLength = 1000, ratio = 10):
             #print('Decay Time: ' + str(decayTime))
             break
 
-    #     if i + windowLength < len(impulse):
-    #         envelope.append(CalculateRMS(impulse[i:i+windowLength]))
-    #     else:
-    #         envelope.append(0)
-    #
-    # time = np.arange(0, len(impulse) / samplingRate, 1 / samplingRate)
-    # plt.plot(time, impulse)
-    # plt.plot(time, envelope)
-    # plt.show()
-
     return decayTime
 
 
@@ -86,6 +76,9 @@ samplingRate = 0
 # The impulse is cut into three parts, beginning-attackTime, attackTime-sustainTime, sustainTime-end
 attackTime = 0.3
 sustainTime = 1.3
+
+# This variable decides whether the time intensive decay time calculations are conducted
+decayTime_flag= False
 
 #These variables are used to save the parameter data to a csv file
 data_array = []
@@ -115,7 +108,10 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
         rolloffs.append(np.mean(librosa.feature.spectral_rolloff(impulse)))
         bandwidths.append(np.mean(librosa.feature.spectral_bandwidth((impulse))))
         rmss.append(CalculateRMS(impulse))
-        decayTimes.append(CalculateDecayTime(impulse, samplingRate))
+        if decayTime_flag:
+            decayTimes.append(CalculateDecayTime(impulse, samplingRate))
+        else:
+            decayTimes.append(0)
 
         impulses = InsertIntoVstack(impulse, impulses)
 
