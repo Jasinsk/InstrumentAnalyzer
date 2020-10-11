@@ -84,11 +84,11 @@ decayTime_flag= False
 data_array = []
 series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values, rms_deviations, \
     bandwidth_values, bandwidth_deviation, decayTime_values, decayTime_deviations, attackRMS_values, attackRMS_deviations, sustainRMS_values, \
-    sustainRMS_deviations, decayRMS_values, decayRMS_deviations = [" "], ["Spectrum Centroid"], ["Centroid Deviation"], \
+    sustainRMS_deviations, decayRMS_values, decayRMS_deviations, tuning_values, tuning_deviations = [" "], ["Spectrum Centroid"], ["Centroid Deviation"], \
                                                     ["Rolloff"], ["Rolloff Deviation"], ["RMS"], ["RMS Deviation"], \
                                                     ["Bandwidth"], ["Bandwidth Deviation"], ["Decay Time"], ["Decay Time Deviation"], ["Attack RMS"], \
                                                     ["Attack RMS Deviation"], ["Sustain RMS"], ["Sustain RMS Deviation"], \
-                                                    ["Decay RMS"], ["Decay RMS Deviation"]
+                                                    ["Decay RMS"], ["Decay RMS Deviation"], ["Tuning"], ["Tuning Deviation"]
 allAttackSpectrums, allSustainSpectrums, allDecaySpectrums, allAttackFrequencies, allSustainFrequencies, \
         allDecayFrequencies, seriesNames = [], [], [], [], [], [], []
 impulseTime, maxAttack, maxSustain, maxDecay = 0, 0, 0, 0
@@ -97,7 +97,7 @@ impulseTime, maxAttack, maxSustain, maxDecay = 0, 0, 0, 0
 for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     seriesDirectory = inputDirectory + "/" + os.fsdecode(seriesDirectory)
     print("Entering folder: " + seriesDirectory)
-    impulses, attackSpectrums, sustainSpectrums, decaySpectrums, centroids, rolloffs, rmss, bandwidths, decayTimes = [], [], [], [], [], [], [], [], []
+    impulses, attackSpectrums, sustainSpectrums, decaySpectrums, centroids, rolloffs, rmss, bandwidths, decayTimes, tunings = [], [], [], [], [], [], [], [], [], []
 
     for impulseFile in os.listdir(os.fsencode(seriesDirectory)):
         impulseFileName = seriesDirectory + "/" + os.fsdecode(impulseFile)
@@ -108,6 +108,7 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
         rolloffs.append(np.mean(librosa.feature.spectral_rolloff(impulse)))
         bandwidths.append(np.mean(librosa.feature.spectral_bandwidth((impulse))))
         rmss.append(CalculateRMS(impulse))
+        tunings.append(np.mean(librosa.estimate_tuning(impulse)))
         if decayTime_flag:
             decayTimes.append(CalculateDecayTime(impulse, samplingRate))
         else:
@@ -146,6 +147,8 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
     rms_deviations.append(np.std(rmss))
     decayTime_values.append(np.mean(decayTimes))
     decayTime_deviations.append(np.std(decayTimes))
+    tuning_values.append(np.mean(tunings))
+    tuning_deviations.append(np.std(tunings))
 
     attackRMS_values.append(CalculateRMS(avrAttackSpectrum))
     attackRMS_deviations.append(0)
@@ -158,7 +161,7 @@ for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
 data_array = np.vstack(
     [series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values,
      rms_deviations, bandwidth_values, bandwidth_deviation, decayTime_values, decayTime_deviations, attackRMS_values, attackRMS_deviations,
-     sustainRMS_values, sustainRMS_deviations, decayRMS_values, decayRMS_deviations])
+     sustainRMS_values, sustainRMS_deviations, decayRMS_values, decayRMS_deviations, tuning_values, tuning_deviations])
 
 np.save(outputDirectory + '/' + dataFileName + '.npy', data_array)
 with open(outputDirectory + '/' + dataFileName + '.csv', 'w', newline='') as csvfile:
@@ -180,44 +183,50 @@ with open(outputDirectory + '/' + dataFileName + '.csv', 'w', newline='') as csv
     dataWriter.writerow(sustainRMS_deviations)
     dataWriter.writerow(decayRMS_values)
     dataWriter.writerow(decayRMS_deviations)
+    dataWriter.writerow(tuning_values)
+    dataWriter.writerow(tuning_deviations)
 
 print("Data saved to: " + dataFileName)
 
 # Drawing spectrum plots
 for iterator in range(0, len(seriesNames)):
 
-    plt.suptitle(seriesNames[iterator].replace(inputDirectory, ''), fontsize='xx-large')
+    #plt.suptitle(seriesNames[iterator].replace(inputDirectory, ''), fontsize='xx-large')
 
     plt.subplot(131)
     plt.plot(allAttackFrequencies[iterator], allAttackSpectrums[iterator])
     plt.xlim([0, 3000])
     plt.ylim([0, maxAttack * 1.02])
-    plt.xlabel('frequency [Hz]')
-    plt.title('0 - ' + str(attackTime) + ' [s]')
-    plt.text(1500, maxAttack, str('Energy = ' + str(CalculateRMS(allAttackSpectrums[iterator]))))
+    plt.xlabel('Częstotliwość [Hz]', fontsize='xx-large')
+    plt.xticks(fontsize='x-large')
+    plt.ylabel('Amplituda [jednostka arbitralna]', fontsize='xx-large')
+    plt.title('0 - ' + str(attackTime) + ' [s]', fontsize='xx-large')
+    #plt.text(1500, maxAttack, str('Energy = ' + str(CalculateRMS(allAttackSpectrums[iterator]))))
 
     plt.subplot(132)
     plt.plot(allSustainFrequencies[iterator], allSustainSpectrums[iterator])
     plt.xlim([0, 3000])
     plt.ylim([0, maxSustain * 1.02])
-    plt.xlabel('frequency [Hz]')
-    plt.title(str(attackTime) + ' - ' + str(sustainTime) + ' [s]')
-    plt.text(1500, maxSustain, str('Energy = ' + str(CalculateRMS(allSustainSpectrums[iterator]))))
+    plt.xlabel('Częstotliwość [Hz]', fontsize='xx-large')
+    plt.xticks(fontsize='x-large')
+    plt.title(str(attackTime) + ' - ' + str(sustainTime) + ' [s]', fontsize='xx-large')
+    #plt.text(1500, maxSustain, str('Energy = ' + str(CalculateRMS(allSustainSpectrums[iterator]))))
 
     plt.subplot(133)
     plt.plot(allDecayFrequencies[iterator], allDecaySpectrums[iterator])
     plt.xlim([0, 3000])
     plt.ylim([0, maxDecay * 1.02])
-    plt.xlabel('frequency [Hz]')
-    plt.title(str(sustainTime) + ' - ' + str(round(impulseTime, 2)) + ' [s]')
-    plt.text(1500, maxDecay, str('Energy = ' + str(CalculateRMS(allDecaySpectrums[iterator]))))
+    plt.xlabel('Częstotliwość [Hz]', fontsize='xx-large')
+    plt.xticks(fontsize='x-large')
+    plt.title(str(sustainTime) + ' - ' + str(round(impulseTime, 2)) + ' [s]', fontsize='xx-large')
+    #plt.text(1500, maxDecay, str('Energy = ' + str(CalculateRMS(allDecaySpectrums[iterator]))))
 
 
     outputFile = seriesNames[iterator].replace(inputDirectory, outputDirectory)
     print("Outputing to: " + outputFile)
 
     figure = plt.gcf()
-    figure.set_size_inches(19.2, 10.8)
+    figure.set_size_inches(17.28, 9.72)
     plt.savefig(outputFile, dpi = 100)
     #plt.show()
     plt.clf()

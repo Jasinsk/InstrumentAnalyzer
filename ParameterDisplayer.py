@@ -25,13 +25,23 @@ for parameter in range((parameterNumber)//2):
         deviations = deviations.astype(np.float)
         parameterName = dataArray[parameter*2,0]
 
+        values = values * 100
+        deviations = deviations * 100
+
         plt.errorbar(seriesNames, values, deviations, fmt='ko', ecolor='b', elinewidth=1.5, capsize=20)
-        plt.title(parameterName)
+        #plt.title(parameterName)
+        plt.xlabel('Konfiguracja mechanizmu', fontsize='x-large')
+        #plt.ylabel('Częstotliwość [Hz]', fontsize='x-large')
+        #plt.ylabel('RMS', fontsize='x-large')
+        #plt.ylabel('Czas [s]', fontsize='x-large')
+        plt.ylabel('Interwał [cent]', fontsize='x-large')
+        plt.subplots_adjust(bottom=0.2)
+        plt.xticks([0, 1, 2, 3, 4, 5, 6, 7], ['brak obciążenia', 'duży w 1', 'mały w 1', 'duży w 2', 'mały w 2', 'mały w 3', 'duży w 3', 'duży w 1 i mały w 3'], fontsize='large', rotation=15)
         plt.grid(True)
 
         outputFile = outputDirectory + '/' + parameterName
         figure = plt.gcf()
-        figure.set_size_inches(19.2, 10.8)
+        figure.set_size_inches(10, 5.4)
         plt.savefig(outputFile, dpi=100)
 
         #plt.show()
