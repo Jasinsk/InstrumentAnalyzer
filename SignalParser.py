@@ -56,7 +56,7 @@ def ParseImpulses(signal, samplingRate, peaks, attackTime = 0.05, decayTime = 7)
             print("Peak too close to end of signal. Impulse not parsed")
     return impulses
 
-def RemoveImpulsesWithEnergyDeviation(impulses, acceptableDeviation = 0.3, impulsPeaks = [], attackTime = 2, acceptableAttackDeviation = 0.6): #trims impulses that have too large of a energy deviation from the mean
+def RemoveImpulsesWithEnergyDeviation(impulses, samplingRate, acceptableDeviation = 0.3, impulsPeaks = [], attackTime = 2, acceptableAttackDeviation = 0.6): #trims impulses that have too large of a energy deviation from the mean
     impulsEnergies, attackEnergies = [], []
     for i in range (0, len(impulses[:,0])):
         impulsEnergies.append(sum((impulses[i,:]) * (impulses[i,:])))
@@ -89,59 +89,60 @@ def WriteParsedImpulsesToFolder(impulses, sampleRate, outputDirectory, seriesDir
         filename = path + "/" + seriesDirectory + "_" + str(i) + ".wav"
         librosa.output.write_wav(filename, impulses[i,:], sampleRate)
 
-# ----------------- Controls -------------------
-# Directories
-inputDirectory = "InputFolder"
-outputDirectory = "ParserOutputFolder"
+def run(inputDirectory, outputDirectory, threshold, minimalTimeDifference, attackTime, decayTime, acceptableEnergyDeviation, attackEnergyTime, attackEnergyDeviation):
+    # ----------------- Controls -------------------
+    # Directories
+    inputDirectory = "InputFolder"
+    outputDirectory = "ParserOutputFolder"
 
-# Peak detection
-threshold = 0.5
-minimalTimeDifference = 1
+    # Peak detection
+    threshold = 0.5
+    minimalTimeDifference = 1
 
-# Impulse parsing
-attackTime = 0.05
-decayTime = 5
+    # Impulse parsing
+    attackTime = 0.05
+    decayTime = 5
 
-# Energy validation of impulses
-acceptableEnergyDeviation = 0.3
-attackEnergyTime = 1.5
-attackEnergyDeviation = 0.25
-# ---------------------------------------------
+    # Energy validation of impulses
+    acceptableEnergyDeviation = 0.3
+    attackEnergyTime = 1.5
+    attackEnergyDeviation = 0.25
+    # ---------------------------------------------
 
-if os.path.isdir(outputDirectory):
-        shutil.rmtree(outputDirectory)
-os.mkdir(outputDirectory)
+    if os.path.isdir(outputDirectory):
+            shutil.rmtree(outputDirectory)
+    os.mkdir(outputDirectory)
 
-for seriesSignal in os.listdir(os.fsencode(inputDirectory)):
-    inputSignal = inputDirectory + "/" + os.fsdecode(seriesSignal)
-    seriesDirectory = os.fsdecode(seriesSignal).rstrip('.wav')
+    for seriesSignal in os.listdir(os.fsencode(inputDirectory)):
+        inputSignal = inputDirectory + "/" + os.fsdecode(seriesSignal)
+        seriesDirectory = os.fsdecode(seriesSignal).rstrip('.wav')
 
-    signal, samplingRate = lbr.load(inputSignal)
+        signal, samplingRate = lbr.load(inputSignal)
 
-    foundPeaks = FindPeaks(signal, samplingRate, threshold)
-    foundPeaks = RemoveDuplicatePeaks(foundPeaks, samplingRate, minimalTimeDifference, decayTime, len(signal))
-    foundImpulses = ParseImpulses(signal, samplingRate, foundPeaks, attackTime, decayTime)
-    validatedImpulses, validatedPeaks = RemoveImpulsesWithEnergyDeviation(foundImpulses, acceptableEnergyDeviation, foundPeaks, attackEnergyTime, attackEnergyDeviation)
-    WriteParsedImpulsesToFolder(validatedImpulses, samplingRate, outputDirectory, seriesDirectory)
+        foundPeaks = FindPeaks(signal, samplingRate, threshold)
+        foundPeaks = RemoveDuplicatePeaks(foundPeaks, samplingRate, minimalTimeDifference, decayTime, len(signal))
+        foundImpulses = ParseImpulses(signal, samplingRate, foundPeaks, attackTime, decayTime)
+        validatedImpulses, validatedPeaks = RemoveImpulsesWithEnergyDeviation(foundImpulses, samplingRate, acceptableEnergyDeviation, foundPeaks, attackEnergyTime, attackEnergyDeviation)
+        WriteParsedImpulsesToFolder(validatedImpulses, samplingRate, outputDirectory, seriesDirectory)
 
-    parsingIndicator = np.zeros(len(signal))
-    for el in foundPeaks:
-        parsingIndicator[el] = 1
-        parsingIndicator[el+1] = -1
+        parsingIndicator = np.zeros(len(signal))
+        for el in foundPeaks:
+            parsingIndicator[el] = 1
+            parsingIndicator[el+1] = -1
 
-    validatedIndicator = np.zeros(len(signal))
-    for el in validatedPeaks:
-        validatedIndicator[el] = 1
-        validatedIndicator[el+1]=-1
+        validatedIndicator = np.zeros(len(signal))
+        for el in validatedPeaks:
+            validatedIndicator[el] = 1
+            validatedIndicator[el+1]=-1
 
-    timeVector = np.arange(0, len(signal)/samplingRate, 1/samplingRate)
-    ylimit = max(abs(signal)) * 1.2
-    plt.figure()
-    plt.plot(timeVector, signal, color='grey', label='Signal')
-    plt.plot(timeVector, parsingIndicator, 'r', label='Discarded peaks')
-    plt.plot(timeVector, validatedIndicator, color = 'chartreuse', label='Accepted peaks')
-    plt.ylim(-ylimit, ylimit)
-    plt.legend(loc='lower right')
-    plt.xlabel('time [s]')
-    plt.title(seriesDirectory)
-    plt.show()
+        timeVector = np.arange(0, len(signal)/samplingRate, 1/samplingRate)
+        ylimit = max(abs(signal)) * 1.2
+        plt.figure()
+        plt.plot(timeVector, signal, color='grey', label='Signal')
+        plt.plot(timeVector, parsingIndicator, 'r', label='Discarded peaks')
+        plt.plot(timeVector, validatedIndicator, color = 'chartreuse', label='Accepted peaks')
+        plt.ylim(-ylimit, ylimit)
+        plt.legend(loc='lower right')
+        plt.xlabel('time [s]')
+        plt.title(seriesDirectory)
+        #plt.show()
