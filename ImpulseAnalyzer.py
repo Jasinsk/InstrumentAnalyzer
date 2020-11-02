@@ -1,13 +1,9 @@
 import numpy as np
 from scipy import signal
 import os
-import obspy
-import obspy.signal
-import obspy.signal.filter
 import matplotlib.pyplot as plt
 import librosa
 import librosa.display
-import math
 import shutil
 import csv
 

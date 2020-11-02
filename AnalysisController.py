@@ -20,7 +20,6 @@ decayTime_flag= False
 displayerInputDirectory = analyzerOutputDirectory
 displayerOutputDirectory = "DisplayerOutputFolder"
 
-
 # -----------------Running sections-------------------
 
 for comparisonGroup in os.listdir(os.fsencode(analyzerInputDirectory)):
