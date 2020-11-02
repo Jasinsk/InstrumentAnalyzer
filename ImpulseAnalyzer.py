@@ -40,7 +40,7 @@ def CalculateFFTs(takes, samplingRate, attackTime, sustainTime): #Takes array of
 def CalculateRMS(signal):
     return np.sum(librosa.feature.rmse(signal))
 
-def CalculateDecayTime(impulse, samplingRate, windowLength = 1000, ratio = 10):
+def CalculateDecayTime(impulse, samplingRate, windowLength = 1000, ratio = 10): #WIP: this is extremally bodged together
     envelope = []
     decayTime = 0
     maxEnv = 0

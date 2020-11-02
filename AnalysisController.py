@@ -21,7 +21,6 @@ displayerInputDirectory = analyzerOutputDirectory
 displayerOutputDirectory = "DisplayerOutputFolder"
 
 # -----------------Running sections-------------------
-
 for comparisonGroup in os.listdir(os.fsencode(analyzerInputDirectory)):
 
     comparisonFolderName = analyzerInputDirectory + "/" + os.fsdecode(comparisonGroup)

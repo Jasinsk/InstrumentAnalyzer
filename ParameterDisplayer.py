@@ -16,6 +16,13 @@ def run(inputDirectory, outputDirectory, fileNameAppendix, dataFileName):
                 deviations = deviations.astype(np.float)
                 parameterName = dataArray[parameter*2,0]
 
+                #Custom labels
+                # Label for x axis
+                plt.xlabel('Tonewood', fontsize='x-large')
+                # Labels for x values
+                plt.xticks([0, 1, 2, 3], ['Mahogony', 'Pine', 'Plywood', 'Rosewood'], fontsize='large', rotation=0)
+
+                # assigning proper y axis labels to graphs
                 if (parameterName == "Spectrum Centroid" or parameterName == "Bandwidth" or parameterName == "Rolloff"):
                         plt.ylabel('Frequency [Hz]', fontsize='x-large')
                 elif (
@@ -25,18 +32,15 @@ def run(inputDirectory, outputDirectory, fileNameAppendix, dataFileName):
                         plt.ylabel('Interval [cent]', fontsize='x-large')
                         values = values * 100
                         deviations = deviations * 100
-                else:
+                elif (parameterName == "Decay Time"):
                         plt.ylabel('Time [s]', fontsize='x-large')
 
                 plt.errorbar(seriesNames, values, deviations, fmt='ko', ecolor='b', elinewidth=1.5, capsize=20)
                 plt.title(parameterName)
-                plt.xlabel('Tonewood', fontsize='x-large')
                 plt.subplots_adjust(bottom=0.2)
-
-                # Custom labels for x values
-                plt.xticks([0, 1, 2, 3], ['Mahogony', 'Pine', 'Plywood', 'Rosewood'], fontsize='large', rotation=0)
                 plt.grid(True)
 
+                # Saving graph
                 outputFile = outputDirectory + '/' + parameterName + '_' + fileNameAppendix
                 figure = plt.gcf()
                 figure.set_size_inches(10, 5.4)
@@ -49,7 +53,6 @@ def run(inputDirectory, outputDirectory, fileNameAppendix, dataFileName):
 
 
         # Displaying energy segment comparisons
-
         attackRMS = dataArray[parameterNumber - 6, 1:]
         attackRMS = attackRMS.astype(np.float)
 

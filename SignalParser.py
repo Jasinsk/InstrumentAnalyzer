@@ -10,7 +10,8 @@ import shutil
 # Each recording put into the input folder is parsed into a seperate folder inside the output directory
 # Impulses are only parsed if the peak meets both the temporal and energetic requirements.
 
-def FindPeaks(signal, samplingRate, thresholdPercentage = 0.7, threshold = -1, reachBackTime = 0.1, reachAheadTime = 0.2): #returns sample numbers of all offsets that exceed threshold
+#returns sample numbers of all offsets that exceed threshold
+def FindPeaks(signal, samplingRate, thresholdPercentage = 0.7, threshold = -1, reachBackTime = 0.1, reachAheadTime = 0.2):
     if threshold == -1:
         threshold = thresholdPercentage * np.amax(signal)
     DetectedOffsets = librosa.onset.onset_detect(signal, samplingRate, backtrack=False, units="samples")
@@ -32,7 +33,8 @@ def FindPeaks(signal, samplingRate, thresholdPercentage = 0.7, threshold = -1, r
 
     return parsingIndicator
 
-def RemoveDuplicatePeaks(peaks, samplingRate, minimalTimeDifference = 1, impulseDecayTime = 0, signalLength = 0): #trims peak list of all duplicates that are closer to each other then the minimalTimeDifference or closer to the end then the impulseDecayTime
+#trims peak list of all duplicates that are closer to each other then the minimalTimeDifference or closer to the end then the impulseDecayTime
+def RemoveDuplicatePeaks(peaks, samplingRate, minimalTimeDifference = 1, impulseDecayTime = 0, signalLength = 0):
     for i in range(0, len(peaks)-1):
         if peaks[i] + samplingRate * minimalTimeDifference > peaks[i+1]:
             peaks[i+1] = 0
@@ -43,7 +45,8 @@ def RemoveDuplicatePeaks(peaks, samplingRate, minimalTimeDifference = 1, impulse
     peaks = np.ma.masked_equal(peaks,0).compressed()
     return peaks
 
-def ParseImpulses(signal, samplingRate, peaks, attackTime = 0.05, decayTime = 7): #returns array which has rows of impulses cut from the main signal around the found peaks
+#returns array which has rows of impulses cut from the main signal around the found peaks
+def ParseImpulses(signal, samplingRate, peaks, attackTime = 0.05, decayTime = 7):
     impulses = []
     for el in peaks:
         if el + decayTime * samplingRate < len(signal):
@@ -56,7 +59,8 @@ def ParseImpulses(signal, samplingRate, peaks, attackTime = 0.05, decayTime = 7)
             print("Peak too close to end of signal. Impulse not parsed")
     return impulses
 
-def RemoveImpulsesWithEnergyDeviation(impulses, samplingRate, acceptableDeviation = 0.3, impulsPeaks = [], attackTime = 2, acceptableAttackDeviation = 0.6): #trims impulses that have too large of a energy deviation from the mean
+#trims impulses that have too large of a energy deviation from the mean
+def RemoveImpulsesWithEnergyDeviation(impulses, samplingRate, acceptableDeviation = 0.3, impulsPeaks = [], attackTime = 2, acceptableAttackDeviation = 0.6):
     impulsEnergies, attackEnergies = [], []
     for i in range (0, len(impulses[:,0])):
         impulsEnergies.append(sum((impulses[i,:]) * (impulses[i,:])))
@@ -82,7 +86,8 @@ def RemoveImpulsesWithEnergyDeviation(impulses, samplingRate, acceptableDeviatio
             i += 1
     return impulses, impulsPeaks
 
-def WriteParsedImpulsesToFolder(impulses, sampleRate, outputDirectory, seriesDirectory): #pushes impulses to files in a folder inside the output folder
+#pushes impulses to files in a folder inside the output folder
+def WriteParsedImpulsesToFolder(impulses, sampleRate, outputDirectory, seriesDirectory):
     path = outputDirectory + "/" + seriesDirectory
     os.mkdir(path)
     for i in range (0, len(impulses[:,0])):
@@ -145,4 +150,6 @@ for seriesSignal in os.listdir(os.fsencode(inputDirectory)):
     plt.legend(loc='lower right')
     plt.xlabel('time [s]')
     plt.title(seriesDirectory)
+
+    # Uncomment to see what the parser is grabing.
     #plt.show()
