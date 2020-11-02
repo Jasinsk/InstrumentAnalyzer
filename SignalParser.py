@@ -92,7 +92,7 @@ def WriteParsedImpulsesToFolder(impulses, sampleRate, outputDirectory, seriesDir
 
 # ----------------- Controls -------------------
 # Directories
-inputDirectory = "InputFolder"
+inputDirectory = "ParserInputFolder"
 outputDirectory = "ParserOutputFolder"
 
 # Peak detection

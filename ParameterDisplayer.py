@@ -4,13 +4,9 @@ import matplotlib.pyplot as plt
 import shutil
 
 # This script accepts a data file saved by ImpulseAnalyzer.py, displays the data and saves the plot into the output directory.
-def run(inputDirectory, outputDirectory, dataFileName):
+def run(inputDirectory, outputDirectory, fileNameAppendix, dataFileName):
 
-        if os.path.isdir(outputDirectory):
-                shutil.rmtree(outputDirectory)
-        os.mkdir(outputDirectory)
-
-        dataArray = np.load(inputDirectory + '/' + dataFileName + '.npy')
+        dataArray = np.load(inputDirectory + '/' + dataFileName + '_' + fileNameAppendix + '.npy')
         seriesNames = dataArray[0,1:]
         dataArray = np.delete(dataArray, 0, 0)
         parameterNumber, sampleNumber = dataArray.shape
@@ -40,10 +36,10 @@ def run(inputDirectory, outputDirectory, dataFileName):
                 plt.subplots_adjust(bottom=0.2)
 
                 # Custom labels for x values
-                plt.xticks([0, 1, 2, 3], ['Mahogony', 'Pine', 'Plywood', 'Rosewood'], fontsize='large', rotation=15)
+                plt.xticks([0, 1, 2, 3], ['Mahogony', 'Pine', 'Plywood', 'Rosewood'], fontsize='large', rotation=0)
                 plt.grid(True)
 
-                outputFile = outputDirectory + '/' + parameterName
+                outputFile = outputDirectory + '/' + parameterName + '_' + fileNameAppendix
                 figure = plt.gcf()
                 figure.set_size_inches(10, 5.4)
                 plt.savefig(outputFile, dpi=100)

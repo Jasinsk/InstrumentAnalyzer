@@ -63,7 +63,7 @@ def CalculateDecayTime(impulse, samplingRate, windowLength = 1000, ratio = 10):
 
     return decayTime
 
-def run(inputDirectory, outputDirectory, dataFileName, attackTime, sustainTime, decayTime_flag):
+def run(inputDirectory, outputDirectory, dataFileName, fileNameAppendix, attackTime, sustainTime, decayTime_flag):
 
     if os.path.isdir(outputDirectory):
             shutil.rmtree(outputDirectory)
@@ -153,8 +153,8 @@ def run(inputDirectory, outputDirectory, dataFileName, attackTime, sustainTime, 
          rms_deviations, bandwidth_values, bandwidth_deviation, decayTime_values, decayTime_deviations, attackRMS_values, attackRMS_deviations,
          sustainRMS_values, sustainRMS_deviations, decayRMS_values, decayRMS_deviations, tuning_values, tuning_deviations])
 
-    np.save(outputDirectory + '/' + dataFileName + '.npy', data_array)
-    with open(outputDirectory + '/' + dataFileName + '.csv', 'w', newline='') as csvfile:
+    np.save(outputDirectory + '/' + dataFileName + '_' + fileNameAppendix + '.npy', data_array)
+    with open(outputDirectory + '/' + dataFileName + '_' + fileNameAppendix + '.csv', 'w', newline='') as csvfile:
         dataWriter = csv.writer(csvfile, delimiter=',', quotechar=';', quoting=csv.QUOTE_MINIMAL)
         dataWriter.writerow(series_names)
         dataWriter.writerow(centroid_values)
@@ -176,7 +176,7 @@ def run(inputDirectory, outputDirectory, dataFileName, attackTime, sustainTime, 
         dataWriter.writerow(tuning_values)
         dataWriter.writerow(tuning_deviations)
 
-    print("Data saved to: " + dataFileName)
+    print("Data saved to: " + dataFileName + '_' + fileNameAppendix)
 
     # Drawing spectrum plots
     for iterator in range(0, len(seriesNames)):

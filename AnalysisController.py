@@ -1,9 +1,10 @@
 import ImpulseAnalyzer
 import ParameterDisplayer
+import os
 
 # -----------------ImpulseAnalyzer Controls-------------------
 # Directories
-analyzerInputDirectory = "ParserOutputFolder"
+analyzerInputDirectory = "AnalyzerInputFolder"
 analyzerOutputDirectory = "AnalyzerOutputFolder"
 dataFileName = "ParameterData"
 
@@ -22,5 +23,10 @@ displayerOutputDirectory = "DisplayerOutputFolder"
 
 # -----------------Running sections-------------------
 
-ImpulseAnalyzer.run(analyzerInputDirectory, analyzerOutputDirectory, dataFileName, attackCutTime, sustainCutTime, decayTime_flag)
-ParameterDisplayer.run(displayerInputDirectory, displayerOutputDirectory, dataFileName)
+for comparisonGroup in os.listdir(os.fsencode(analyzerInputDirectory)):
+
+    comparisonFolderName = analyzerInputDirectory + "/" + os.fsdecode(comparisonGroup)
+    comparisonOutputDirectory = analyzerOutputDirectory + "/" + os.fsdecode(comparisonGroup)
+
+    ImpulseAnalyzer.run(comparisonFolderName, comparisonOutputDirectory, dataFileName, os.fsdecode(comparisonGroup), attackCutTime, sustainCutTime, decayTime_flag)
+    ParameterDisplayer.run(comparisonOutputDirectory, comparisonOutputDirectory, os.fsdecode(comparisonGroup), dataFileName)
