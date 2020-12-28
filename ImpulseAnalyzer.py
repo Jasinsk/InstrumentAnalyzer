@@ -69,12 +69,9 @@ def run(inputDirectory, outputDirectory, dataFileName, fileNameAppendix, attackT
     #These variables are used to save the parameter data to a csv file
     data_array = []
     series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values, rms_deviations, \
-        bandwidth_values, bandwidth_deviation, decayTime_values, decayTime_deviations, attackRMS_values, attackRMS_deviations, sustainRMS_values, \
-        sustainRMS_deviations, decayRMS_values, decayRMS_deviations, tuning_values, tuning_deviations = [" "], ["Spectrum Centroid"], ["Centroid Deviation"], \
+        bandwidth_values, bandwidth_deviation, decayTime_values, decayTime_deviations, tuning_values, tuning_deviations = [" "], ["Spectrum Centroid"], ["Centroid Deviation"], \
                                                         ["Rolloff"], ["Rolloff Deviation"], ["RMS"], ["RMS Deviation"], \
-                                                        ["Bandwidth"], ["Bandwidth Deviation"], ["Decay Time"], ["Decay Time Deviation"], ["Attack RMS"], \
-                                                        ["Attack RMS Deviation"], ["Sustain RMS"], ["Sustain RMS Deviation"], \
-                                                        ["Decay RMS"], ["Decay RMS Deviation"], ["Tuning"], ["Tuning Deviation"]
+                                                        ["Bandwidth"], ["Bandwidth Deviation"], ["Decay Time"], ["Decay Time Deviation"], ["Tuning"], ["Tuning Deviation"]
     allAttackSpectrums, allSustainSpectrums, allDecaySpectrums, allAttackFrequencies, allSustainFrequencies, \
             allDecayFrequencies, seriesNames = [], [], [], [], [], [], []
     impulseTime, maxAttack, maxSustain, maxDecay = 0, 0, 0, 0
@@ -136,18 +133,10 @@ def run(inputDirectory, outputDirectory, dataFileName, fileNameAppendix, attackT
         tuning_values.append(np.mean(tunings))
         tuning_deviations.append(np.std(tunings))
 
-        attackRMS_values.append(CalculateRMS(avrAttackSpectrum))
-        attackRMS_deviations.append(0)
-        sustainRMS_values.append(CalculateRMS(avrSustainSpectrum))
-        sustainRMS_deviations.append(0)
-        decayRMS_values.append(CalculateRMS(avrDecaySpectrum))
-        decayRMS_deviations.append(0)
-
     # Saving the parameter data
     data_array = np.vstack(
         [series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values,
-         rms_deviations, bandwidth_values, bandwidth_deviation, decayTime_values, decayTime_deviations, attackRMS_values, attackRMS_deviations,
-         sustainRMS_values, sustainRMS_deviations, decayRMS_values, decayRMS_deviations, tuning_values, tuning_deviations])
+         rms_deviations, bandwidth_values, bandwidth_deviation, decayTime_values, decayTime_deviations, tuning_values, tuning_deviations])
 
     np.save(outputDirectory + '/' + dataFileName + '_' + fileNameAppendix + '.npy', data_array)
     with open(outputDirectory + '/' + dataFileName + '_' + fileNameAppendix + '.csv', 'w', newline='') as csvfile:
@@ -163,12 +152,6 @@ def run(inputDirectory, outputDirectory, dataFileName, fileNameAppendix, attackT
         dataWriter.writerow(bandwidth_deviation)
         dataWriter.writerow(decayTime_values)
         dataWriter.writerow(decayTime_deviations)
-        dataWriter.writerow(attackRMS_values)
-        dataWriter.writerow(attackRMS_deviations)
-        dataWriter.writerow(sustainRMS_values)
-        dataWriter.writerow(sustainRMS_deviations)
-        dataWriter.writerow(decayRMS_values)
-        dataWriter.writerow(decayRMS_deviations)
         dataWriter.writerow(tuning_values)
         dataWriter.writerow(tuning_deviations)
 
