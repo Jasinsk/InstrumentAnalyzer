@@ -179,32 +179,55 @@ def run(inputDirectory, outputDirectory, dataFileName, fileNameAppendix, attackT
 
         #plt.suptitle(seriesNames[iterator].replace(inputDirectory, ''), fontsize='xx-large')
 
+        #converting frequencies to kHz for easier legibility
+        kAttackFrequencies = allAttackFrequencies[iterator]/1000
+        kSustainFrequencies = allSustainFrequencies[iterator]/1000
+        kDecayFrequencies = allDecayFrequencies[iterator]/1000
+
+
+
         plt.subplot(131)
-        plt.plot(allAttackFrequencies[iterator], allAttackSpectrums[iterator])
-        plt.xlim([0, 3000])
-        plt.ylim([0, maxAttack * 1.02])
-        plt.xlabel('Częstotliwość [Hz]', fontsize='xx-large')
-        plt.xticks(fontsize='x-large')
-        plt.ylabel('Amplituda [jednostka arbitralna]', fontsize='xx-large')
-        plt.title('0 - ' + str(attackTime) + ' [s]', fontsize='xx-large')
+        plt.plot(kAttackFrequencies, allAttackSpectrums[iterator], color = 'k')
+        plt.locator_params(nbins=4)
+        plt.xlim([0, 2])
+        plt.ylim([10e-12, maxAttack * 1.1])
+        plt.xlabel('f [kHz]', fontsize=30)
+        plt.xticks(fontsize=21)
+        plt.yticks(fontsize=23)
+
+        #Mierna próba zmiany wielkości notacji wykładniczej
+        #yaxis.get_offset_text().set_fontsize(24)
+
+        plt.ticklabel_format(useMathText=True, scilimits=(0, 0))
+        plt.ylabel('Amplitude', fontsize=35)
+        plt.title('0 - ' + str(attackTime) + ' [s]', fontsize=25)
+        #plt.yscale("log")
         #plt.text(1500, maxAttack, str('Energy = ' + str(CalculateRMS(allAttackSpectrums[iterator]))))
 
         plt.subplot(132)
-        plt.plot(allSustainFrequencies[iterator], allSustainSpectrums[iterator])
-        plt.xlim([0, 3000])
-        plt.ylim([0, maxSustain * 1.02])
-        plt.xlabel('Częstotliwość [Hz]', fontsize='xx-large')
-        plt.xticks(fontsize='x-large')
-        plt.title(str(attackTime) + ' - ' + str(sustainTime) + ' [s]', fontsize='xx-large')
+        plt.plot(kSustainFrequencies, allSustainSpectrums[iterator], color = 'k')
+        plt.locator_params(nbins=4)
+        plt.xlim([0, 2])
+        plt.ylim([10e-12, maxSustain * 1.1])
+        plt.xlabel('f [kHz]', fontsize=32)
+        plt.xticks(fontsize=21)
+        plt.ticklabel_format(useMathText=True, scilimits=(0, 0))
+        plt.yticks(fontsize=23)
+        plt.title(str(attackTime) + ' - ' + str(sustainTime) + ' [s]', fontsize=25)
+        #plt.yscale("log")
         #plt.text(1500, maxSustain, str('Energy = ' + str(CalculateRMS(allSustainSpectrums[iterator]))))
 
         plt.subplot(133)
-        plt.plot(allDecayFrequencies[iterator], allDecaySpectrums[iterator])
-        plt.xlim([0, 3000])
-        plt.ylim([0, maxDecay * 1.02])
-        plt.xlabel('Częstotliwość [Hz]', fontsize='xx-large')
-        plt.xticks(fontsize='x-large')
-        plt.title(str(sustainTime) + ' - ' + str(round(impulseTime, 2)) + ' [s]', fontsize='xx-large')
+        plt.plot(kDecayFrequencies, allDecaySpectrums[iterator], color = 'k')
+        plt.locator_params(nbins=4)
+        plt.xlim([0, 2])
+        plt.ylim([10e-12, maxDecay * 1.1])
+        plt.xlabel('f [kHz]', fontsize=32)
+        plt.xticks(fontsize=21)
+        plt.ticklabel_format(useMathText=True, scilimits=(0, 0))
+        plt.yticks(fontsize=23)
+        plt.title(str(sustainTime) + ' - ' + str(round(impulseTime, 2)) + ' [s]', fontsize=25)
+        #plt.yscale("log")
         #plt.text(1500, maxDecay, str('Energy = ' + str(CalculateRMS(allDecaySpectrums[iterator]))))
 
 
@@ -212,8 +235,12 @@ def run(inputDirectory, outputDirectory, dataFileName, fileNameAppendix, attackT
         print("Outputing to: " + outputFile)
 
         figure = plt.gcf()
-        figure.set_size_inches(17.28, 9.72)
+        figure.set_size_inches(19, 8)
         plt.savefig(outputFile, dpi = 100)
+
+        #This should be used if outputing to vector file
+        #plt.savefig(outputFile, dpi=100, format="eps")
+
         #plt.show()
         plt.clf()
 
