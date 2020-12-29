@@ -72,9 +72,13 @@ def run(inputDirectory, outputDirectory, dataFileName, fileNameAppendix, attackT
         bandwidth_values, bandwidth_deviation, decayTime_values, decayTime_deviations, tuning_values, tuning_deviations = [" "], ["Spectrum Centroid"], ["Centroid Deviation"], \
                                                         ["Rolloff"], ["Rolloff Deviation"], ["RMS"], ["RMS Deviation"], \
                                                         ["Bandwidth"], ["Bandwidth Deviation"], ["Decay Time"], ["Decay Time Deviation"], ["Tuning"], ["Tuning Deviation"]
+
     allAttackSpectrums, allSustainSpectrums, allDecaySpectrums, allAttackFrequencies, allSustainFrequencies, \
             allDecayFrequencies, seriesNames = [], [], [], [], [], [], []
     impulseTime, maxAttack, maxSustain, maxDecay = 0, 0, 0, 0
+
+    #flags used to decide which parameters will be calculated
+    centroid_flag, rolloff_flag, rms_flag, bandwidth_flag, tuning_flag = True, True, True, True, True
 
     # Calculating spectrums and parameters
     for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
@@ -87,15 +91,18 @@ def run(inputDirectory, outputDirectory, dataFileName, fileNameAppendix, attackT
             print("Loading file: " + impulseFileName)
             impulse, samplingRate = librosa.load(impulseFileName)
 
-            centroids.append(np.mean(librosa.feature.spectral_centroid(impulse)))
-            rolloffs.append(np.mean(librosa.feature.spectral_rolloff(impulse)))
-            bandwidths.append(np.mean(librosa.feature.spectral_bandwidth((impulse))))
-            rmss.append(CalculateRMS(impulse))
-            tunings.append(np.mean(librosa.estimate_tuning(impulse)))
+            if centroid_flag:
+                centroids.append(np.mean(librosa.feature.spectral_centroid(impulse)))
+            if rolloff_flag:
+                rolloffs.append(np.mean(librosa.feature.spectral_rolloff(impulse)))
+            if bandwidth_flag:
+                bandwidths.append(np.mean(librosa.feature.spectral_bandwidth((impulse))))
+            if rms_flag:
+                rmss.append(CalculateRMS(impulse))
+            if tuning_flag:
+                tunings.append(np.mean(librosa.estimate_tuning(impulse)))
             if decayTime_flag:
                 decayTimes.append(CalculateDecayTime(impulse, samplingRate))
-            else:
-                decayTimes.append(0)
 
             impulses = InsertIntoVstack(impulse, impulses)
 
@@ -120,6 +127,7 @@ def run(inputDirectory, outputDirectory, dataFileName, fileNameAppendix, attackT
 
         seriesName = seriesDirectory.replace(inputDirectory + "/", "")
         series_names.append(seriesName)
+
         centroid_values.append(np.mean(centroids))
         centroid_deviations.append(np.std(centroids))
         rolloff_values.append(np.mean(rolloffs))
@@ -134,26 +142,47 @@ def run(inputDirectory, outputDirectory, dataFileName, fileNameAppendix, attackT
         tuning_deviations.append(np.std(tunings))
 
     # Saving the parameter data
-    data_array = np.vstack(
-        [series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values,
-         rms_deviations, bandwidth_values, bandwidth_deviation, decayTime_values, decayTime_deviations, tuning_values, tuning_deviations])
+    #data_array = np.vstack(
+    #    [series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values,
+    #     rms_deviations, bandwidth_values, bandwidth_deviation, decayTime_values, decayTime_deviations, tuning_values, tuning_deviations])
+
+    data_array = series_names
+    if centroid_flag:
+        data_array = np.vstack((data_array, centroid_values, centroid_deviations))
+    print(data_array)
+    if rolloff_flag:
+        data_array = np.vstack((data_array, rolloff_values, rolloff_deviations))
+    if rms_flag:
+        data_array = np.vstack((data_array, rms_values, rms_deviations))
+    if bandwidth_flag:
+        data_array = np.vstack((data_array, bandwidth_values, bandwidth_deviation))
+    if decayTime_flag:
+        data_array = np.vstack((data_array, decayTime_values, decayTime_deviations))
+    if tuning_flag:
+        data_array = np.vstack((data_array, tuning_values, tuning_deviations))
 
     np.save(outputDirectory + '/' + dataFileName + '_' + fileNameAppendix + '.npy', data_array)
     with open(outputDirectory + '/' + dataFileName + '_' + fileNameAppendix + '.csv', 'w', newline='') as csvfile:
         dataWriter = csv.writer(csvfile, delimiter=',', quotechar=';', quoting=csv.QUOTE_MINIMAL)
         dataWriter.writerow(series_names)
-        dataWriter.writerow(centroid_values)
-        dataWriter.writerow(centroid_deviations)
-        dataWriter.writerow(rms_values)
-        dataWriter.writerow(rms_deviations)
-        dataWriter.writerow(rolloff_values)
-        dataWriter.writerow(rolloff_deviations)
-        dataWriter.writerow(bandwidth_values)
-        dataWriter.writerow(bandwidth_deviation)
-        dataWriter.writerow(decayTime_values)
-        dataWriter.writerow(decayTime_deviations)
-        dataWriter.writerow(tuning_values)
-        dataWriter.writerow(tuning_deviations)
+        if centroid_flag:
+            dataWriter.writerow(centroid_values)
+            dataWriter.writerow(centroid_deviations)
+        if rms_flag:
+            dataWriter.writerow(rms_values)
+            dataWriter.writerow(rms_deviations)
+        if rolloff_flag:
+            dataWriter.writerow(rolloff_values)
+            dataWriter.writerow(rolloff_deviations)
+        if bandwidth_flag:
+            dataWriter.writerow(bandwidth_values)
+            dataWriter.writerow(bandwidth_deviation)
+        if decayTime_flag:
+            dataWriter.writerow(decayTime_values)
+            dataWriter.writerow(decayTime_deviations)
+        if tuning_flag:
+            dataWriter.writerow(tuning_values)
+            dataWriter.writerow(tuning_deviations)
 
     print("Data saved to: " + dataFileName + '_' + fileNameAppendix)
 

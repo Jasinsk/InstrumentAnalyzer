@@ -22,7 +22,7 @@ def run(inputDirectory, outputDirectory, fileNameAppendix, dataFileName):
                 # Label for x axis
                 plt.xlabel('Tonewood', fontsize=customFontsize)
                 # Labels for x values
-                plt.xticks([0, 1, 2, 3], ['Mahogony', 'Pine', 'Plywood', 'Rosewood'], fontsize=15, rotation=0)
+                plt.xticks([0, 1, 2, 3], ['Sapele', 'Pine', 'Plywood', 'Rosewood'], fontsize=15, rotation=0)
 
                 # assigning proper y axis labels to graphs
                 if (parameterName == "Spectrum Centroid" or parameterName == "Bandwidth" or parameterName == "Rolloff"):
