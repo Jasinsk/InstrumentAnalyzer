@@ -6,7 +6,8 @@ import os
 # Directories
 analyzerInputDirectory = "AnalyzerInputFolder"
 analyzerOutputDirectory = "AnalyzerOutputFolder"
-dataFileName = "ParameterData"
+parameterFileName = "ParameterData"
+spectrumFileName = "SpectrumData"
 
 # The impulse is cut into three parts, beginning-attackTime, attackTime-sustainTime, sustainTime-end
 attackCutTime = 0.3
@@ -26,5 +27,5 @@ for comparisonGroup in os.listdir(os.fsencode(analyzerInputDirectory)):
     comparisonFolderName = analyzerInputDirectory + "/" + os.fsdecode(comparisonGroup)
     comparisonOutputDirectory = analyzerOutputDirectory + "/" + os.fsdecode(comparisonGroup)
 
-    ImpulseAnalyzer.run(comparisonFolderName, comparisonOutputDirectory, dataFileName, os.fsdecode(comparisonGroup), attackCutTime, sustainCutTime, decayTime_flag)
-    ParameterDisplayer.run(comparisonOutputDirectory, comparisonOutputDirectory, os.fsdecode(comparisonGroup), dataFileName)
+    ImpulseAnalyzer.run(comparisonFolderName, comparisonOutputDirectory, parameterFileName, spectrumFileName, os.fsdecode(comparisonGroup), attackCutTime, sustainCutTime, decayTime_flag)
+    ParameterDisplayer.run(comparisonOutputDirectory, comparisonOutputDirectory, os.fsdecode(comparisonGroup), parameterFileName)

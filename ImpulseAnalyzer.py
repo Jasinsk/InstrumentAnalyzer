@@ -59,14 +59,14 @@ def CalculateDecayTime(impulse, samplingRate, windowLength = 1000, ratio = 10): 
 
     return decayTime
 
-def run(inputDirectory, outputDirectory, dataFileName, fileNameAppendix, attackTime, sustainTime, decayTime_flag):
+def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fileNameAppendix, attackTime, sustainTime, decayTime_flag):
 
     if os.path.isdir(outputDirectory):
             shutil.rmtree(outputDirectory)
     os.mkdir(outputDirectory)
 
     samplingRate = 0
-    #These variables are used to save the parameter data to a csv file
+    # These variables are used to save the parameter data to a csv file
     data_array = []
     series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values, rms_deviations, \
         bandwidth_values, bandwidth_deviation, decayTime_values, decayTime_deviations, tuning_values, tuning_deviations = [" "], ["Spectrum Centroid"], ["Centroid Deviation"], \
@@ -77,7 +77,7 @@ def run(inputDirectory, outputDirectory, dataFileName, fileNameAppendix, attackT
             allDecayFrequencies, seriesNames = [], [], [], [], [], [], []
     impulseTime, maxAttack, maxSustain, maxDecay = 0, 0, 0, 0
 
-    #flags used to decide which parameters will be calculated
+    # Flags used to decide which parameters will be calculated
     centroid_flag, rolloff_flag, rms_flag, bandwidth_flag, tuning_flag = True, True, True, True, True
 
     # Calculating spectrums and parameters
@@ -141,15 +141,11 @@ def run(inputDirectory, outputDirectory, dataFileName, fileNameAppendix, attackT
         tuning_values.append(np.mean(tunings))
         tuning_deviations.append(np.std(tunings))
 
-    # Saving the parameter data
-    #data_array = np.vstack(
-    #    [series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values,
-    #     rms_deviations, bandwidth_values, bandwidth_deviation, decayTime_values, decayTime_deviations, tuning_values, tuning_deviations])
+    # Saving parameter data
 
     data_array = series_names
     if centroid_flag:
         data_array = np.vstack((data_array, centroid_values, centroid_deviations))
-    print(data_array)
     if rolloff_flag:
         data_array = np.vstack((data_array, rolloff_values, rolloff_deviations))
     if rms_flag:
@@ -160,9 +156,9 @@ def run(inputDirectory, outputDirectory, dataFileName, fileNameAppendix, attackT
         data_array = np.vstack((data_array, decayTime_values, decayTime_deviations))
     if tuning_flag:
         data_array = np.vstack((data_array, tuning_values, tuning_deviations))
+    np.save(outputDirectory + '/' + parameterFileName + '_' + fileNameAppendix + '.npy', data_array)
 
-    np.save(outputDirectory + '/' + dataFileName + '_' + fileNameAppendix + '.npy', data_array)
-    with open(outputDirectory + '/' + dataFileName + '_' + fileNameAppendix + '.csv', 'w', newline='') as csvfile:
+    with open(outputDirectory + '/' + parameterFileName + '_' + fileNameAppendix + '.csv', 'w', newline='') as csvfile:
         dataWriter = csv.writer(csvfile, delimiter=',', quotechar=';', quoting=csv.QUOTE_MINIMAL)
         dataWriter.writerow(series_names)
         if centroid_flag:
@@ -184,9 +180,32 @@ def run(inputDirectory, outputDirectory, dataFileName, fileNameAppendix, attackT
             dataWriter.writerow(tuning_values)
             dataWriter.writerow(tuning_deviations)
 
-    print("Data saved to: " + dataFileName + '_' + fileNameAppendix)
+    print("Data saved to: " + parameterFileName + '_' + fileNameAppendix)
+
+    # Saving spectrum data
+
+    with open(outputDirectory + '/' + spectrumFileName + '_' + fileNameAppendix + '.csv', 'w', newline='') as csvfile:
+        dataWriter = csv.writer(csvfile, delimiter=',', quotechar=';', quoting=csv.QUOTE_MINIMAL)
+        for iterator in range(0, len(seriesNames)):
+            dataWriter.writerow("Name: ")
+            dataWriter.writerow(seriesNames[iterator])
+            dataWriter.writerow("Attack spectrum: ")
+            dataWriter.writerow(allAttackSpectrums[iterator])
+            dataWriter.writerow("Attack frequencies: ")
+            dataWriter.writerow(allAttackFrequencies[iterator])
+            dataWriter.writerow("Sustain spectrum: ")
+            dataWriter.writerow(allSustainSpectrums[iterator])
+            dataWriter.writerow("Sustain frequencies: ")
+            dataWriter.writerow(allSustainFrequencies[iterator])
+            dataWriter.writerow("Decay Spectrum: ")
+            dataWriter.writerow(allDecaySpectrums[iterator])
+            dataWriter.writerow("Decay frequencies: ")
+            dataWriter.writerow(allDecayFrequencies[iterator])
+
+    print("Spectrums saved to: " + spectrumFileName + '_' + fileNameAppendix)
 
     # Drawing spectrum plots
+
     for iterator in range(0, len(seriesNames)):
 
         #plt.suptitle(seriesNames[iterator].replace(inputDirectory, ''), fontsize='xx-large')
@@ -194,9 +213,7 @@ def run(inputDirectory, outputDirectory, dataFileName, fileNameAppendix, attackT
         #converting frequencies to kHz for easier legibility
         kAttackFrequencies = allAttackFrequencies[iterator]/1000
         kSustainFrequencies = allSustainFrequencies[iterator]/1000
-        kDecayFrequencies = allDecayFrequencies[iterator]/1000
-
-
+        kDecayFrequencies = allDecayFrequencies[iterator]/100
 
         plt.subplot(131)
         plt.plot(kAttackFrequencies, allAttackSpectrums[iterator], color = 'k')
