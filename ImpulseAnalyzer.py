@@ -69,22 +69,23 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     # These variables are used to save the parameter data to a csv file
     data_array = []
     series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values, rms_deviations, \
-        bandwidth_values, bandwidth_deviation, decayTime_values, decayTime_deviations, tuning_values, tuning_deviations = [" "], ["Spectrum Centroid"], ["Centroid Deviation"], \
+        bandwidth_values, bandwidth_deviation, zeroCrossingRate_values, zeroCrossingRate_deviations, decayTime_values, decayTime_deviations, tuning_values, tuning_deviations = [" "], ["Spectrum Centroid"], ["Centroid Deviation"], \
                                                         ["Rolloff"], ["Rolloff Deviation"], ["RMS"], ["RMS Deviation"], \
-                                                        ["Bandwidth"], ["Bandwidth Deviation"], ["Decay Time"], ["Decay Time Deviation"], ["Tuning"], ["Tuning Deviation"]
+                                                        ["Bandwidth"], ["Bandwidth Deviation"], ["Zero Crossing Rate"], ["Zero Crossing Rate Deviations"], ["Decay Time"], ["Decay Time Deviation"], ["Tuning"], ["Tuning Deviation"]
+
 
     allAttackSpectrums, allSustainSpectrums, allDecaySpectrums, allAttackFrequencies, allSustainFrequencies, \
             allDecayFrequencies, seriesNames = [], [], [], [], [], [], []
     impulseTime, maxAttack, maxSustain, maxDecay = 0, 0, 0, 0
 
     # Flags used to decide which parameters will be calculated
-    centroid_flag, rolloff_flag, rms_flag, bandwidth_flag, tuning_flag = True, True, True, True, True
+    centroid_flag, rolloff_flag, rms_flag, bandwidth_flag, crossingRate_flag, tuning_flag = True, True, True, True, True, True
 
     # Calculating spectrums and parameters
     for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
         seriesDirectory = inputDirectory + "/" + os.fsdecode(seriesDirectory)
         print("Entering folder: " + seriesDirectory)
-        impulses, attackSpectrums, sustainSpectrums, decaySpectrums, centroids, rolloffs, rmss, bandwidths, decayTimes, tunings = [], [], [], [], [], [], [], [], [], []
+        impulses, attackSpectrums, sustainSpectrums, decaySpectrums, centroids, rolloffs, rmss, bandwidths, crossingRates, decayTimes, tunings = [], [], [], [], [], [], [], [], [], [], []
 
         for impulseFile in os.listdir(os.fsencode(seriesDirectory)):
             impulseFileName = seriesDirectory + "/" + os.fsdecode(impulseFile)
@@ -96,7 +97,9 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             if rolloff_flag:
                 rolloffs.append(np.mean(librosa.feature.spectral_rolloff(impulse)))
             if bandwidth_flag:
-                bandwidths.append(np.mean(librosa.feature.spectral_bandwidth((impulse))))
+                bandwidths.append(np.mean(librosa.feature.spectral_bandwidth(impulse)))
+            if crossingRate_flag:
+                crossingRates.append(np.mean(librosa.feature.zero_crossing_rate(impulse)))
             if rms_flag:
                 rmss.append(CalculateRMS(impulse))
             if tuning_flag:
@@ -134,6 +137,8 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         rolloff_deviations.append(np.std(rolloffs))
         bandwidth_values.append(np.mean(bandwidths))
         bandwidth_deviation.append((np.std(bandwidths)))
+        zeroCrossingRate_values.append(np.mean(crossingRates))
+        zeroCrossingRate_deviations.append(np.std(crossingRates))
         rms_values.append(np.mean(rmss))
         rms_deviations.append(np.std(rmss))
         decayTime_values.append(np.mean(decayTimes))
@@ -152,6 +157,8 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         data_array = np.vstack((data_array, rms_values, rms_deviations))
     if bandwidth_flag:
         data_array = np.vstack((data_array, bandwidth_values, bandwidth_deviation))
+    if crossingRate_flag:
+        data_array = np.vstack((data_array, zeroCrossingRate_values, zeroCrossingRate_values))
     if decayTime_flag:
         data_array = np.vstack((data_array, decayTime_values, decayTime_deviations))
     if tuning_flag:
@@ -173,6 +180,9 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         if bandwidth_flag:
             dataWriter.writerow(bandwidth_values)
             dataWriter.writerow(bandwidth_deviation)
+        if crossingRate_flag:
+            dataWriter.writerow(zeroCrossingRate_values)
+            dataWriter.writerow(zeroCrossingRate_deviations)
         if decayTime_flag:
             dataWriter.writerow(decayTime_values)
             dataWriter.writerow(decayTime_deviations)

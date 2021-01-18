@@ -36,6 +36,8 @@ def run(inputDirectory, outputDirectory, fileNameAppendix, dataFileName):
                         deviations = deviations * 100
                 elif (parameterName == "Decay Time"):
                         plt.ylabel('Time [s]', fontsize=customFontsize)
+                elif (parameterName == "Zero Crossing Rate"):
+                        plt.ylabel('Rate', fontsize=customFontsize)
 
                 plt.errorbar(seriesNames, values, deviations, fmt='ko', ecolor='k', elinewidth=1.5, capsize=20)
                 #plt.title(parameterName)
