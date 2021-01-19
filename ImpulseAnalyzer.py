@@ -20,11 +20,11 @@ def InsertIntoVstack(vector, stack):
 
     return stack
 
-def CalculateAverageVector(Vectors): #Takes a vector of vectors and calculates a average vector
+def CalculateAverageVector(Vectors): # Takes a vector of vectors and calculates a average vector
     averageVector = np.mean(Vectors, axis=0)
     return averageVector
 
-def CalculateFFTs(takes, samplingRate, attackTime, sustainTime): #Takes array of impulses and creates array of spectrums
+def CalculateFFTs(takes, samplingRate, attackTime, sustainTime): # Takes array of impulses and creates array of spectrums
     attackSpectrums, sustainSpectrums, decaySpectrums = [], [], []
     attackFrequencies, sustainFrequencies, decayFrequencies = 0, 0, 0
     for take in takes:
@@ -41,23 +41,18 @@ def CalculateFFTs(takes, samplingRate, attackTime, sustainTime): #Takes array of
 def CalculateRMS(signal):
     return np.sum(librosa.feature.rmse(signal))
 
-def CalculateDecayTime(impulse, samplingRate, windowLength = 1000, ratio = 10): #WIP: this is extremally bodged together
-    envelope = []
-    decayTime = 0
-    maxEnv = 0
+def CalculateDecayTime(impulse, windowLength = 2048, hopsize = 1024, ratio = 0.12): # Calculates time between the peak of impulse and it decaying below the value of max*ratio
+    envelope = iracema.features.peak_envelope(impulse, windowLength, hopsize)
+    maxEnv = max(envelope.data)
     peakTime = 0
-    for i in range(0,len(impulse)):
+    decayTime = 0
 
-        energy = CalculateRMS(impulse[i:i+windowLength])
-        if energy > maxEnv:
-            maxEnv = energy
-            peakTime = i
-
-        if energy * ratio < maxEnv:
-            decayTime = (i - peakTime)/samplingRate
-            #print('Decay Time: ' + str(decayTime))
+    for i in range(0,len(envelope.data)):
+        if envelope.data[i] == maxEnv:
+            peakTime = envelope.time[i]
+        if maxEnv * ratio > envelope.data[i]:
+            decayTime = envelope.time[i] - peakTime
             break
-
     return decayTime
 
 def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fileNameAppendix, attackTime, sustainTime, decayTime_flag):
@@ -129,7 +124,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             if tuning_flag:
                 tunings.append(np.mean(librosa.estimate_tuning(impulse)))
             if decayTime_flag:
-                decayTimes.append(CalculateDecayTime(impulse, samplingRate))
+                decayTimes.append(CalculateDecayTime(impulseIRA))
 
             impulses = InsertIntoVstack(impulse, impulses)
 

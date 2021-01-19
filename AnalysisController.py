@@ -14,7 +14,7 @@ attackCutTime = 0.3
 sustainCutTime = 1.3
 
 # This variable decides whether the time intensive decay time calculations are conducted
-decayTime_flag= False
+decayTime_flag= True
 
 # -----------------ParameterDisplayer Controls-------------------
 # Directories
