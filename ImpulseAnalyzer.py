@@ -4,6 +4,7 @@ import os
 import matplotlib.pyplot as plt
 import librosa
 import librosa.display
+import iracema
 import shutil
 import csv
 
@@ -69,9 +70,13 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     # These variables are used to save the parameter data to a csv file
     data_array = []
     series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values, rms_deviations, \
-        bandwidth_values, bandwidth_deviation, zeroCrossingRate_values, zeroCrossingRate_deviations, decayTime_values, decayTime_deviations, tuning_values, tuning_deviations = [" "], ["Spectrum Centroid"], ["Centroid Deviation"], \
-                                                        ["Rolloff"], ["Rolloff Deviation"], ["RMS"], ["RMS Deviation"], \
-                                                        ["Bandwidth"], ["Bandwidth Deviation"], ["Zero Crossing Rate"], ["Zero Crossing Rate Deviations"], ["Decay Time"], ["Decay Time Deviation"], ["Tuning"], ["Tuning Deviation"]
+        bandwidth_values, bandwidth_deviation, zeroCrossingRate_values, zeroCrossingRate_deviations, spread_values, spread_deviations, \
+        entropy_values, entropy_deviations, inharmonicity_values, inharmonicity_deviations, noisiness_values, noisiness_deviations, \
+        oddEvenRatio_values, oddEvenRatio_deviations, decayTime_values, decayTime_deviations, tuning_values, tuning_deviations = [" "], ["Spectrum Centroid"], ["Centroid Deviation"], \
+            ["Rolloff"], ["Rolloff Deviation"], ["RMS"], ["RMS Deviation"], ["Bandwidth"], ["Bandwidth Deviation"], ["Zero Crossing Rate"], \
+            ["Zero Crossing Rate Deviation"], ["Spread"], ["Spread Deviation"], ["Entropy"], ["Entropy Deviation"], ["Inharmonicity"], \
+            ["Inharmonicity Deaviation"], ["Noisiness"], ["Noisiness Deviations"], ["Odd-Even Ratio"], ["Odd-Even Ratio Deviation"], \
+            ["Decay Time"], ["Decay Time Deviation"], ["Tuning"], ["Tuning Deviation"]
 
 
     allAttackSpectrums, allSustainSpectrums, allDecaySpectrums, allAttackFrequencies, allSustainFrequencies, \
@@ -79,18 +84,27 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     impulseTime, maxAttack, maxSustain, maxDecay = 0, 0, 0, 0
 
     # Flags used to decide which parameters will be calculated
-    centroid_flag, rolloff_flag, rms_flag, bandwidth_flag, crossingRate_flag, tuning_flag = True, True, True, True, True, True
+    centroid_flag, rolloff_flag, rms_flag, bandwidth_flag, crossingRate_flag, spread_flag, entropy_flag, inharmonicity_flag, \
+    noisiness_flag, oddeven_flag, tuning_flag = True, True, True, True, True, True, True, True, True, True, True
 
     # Calculating spectrums and parameters
     for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
         seriesDirectory = inputDirectory + "/" + os.fsdecode(seriesDirectory)
         print("Entering folder: " + seriesDirectory)
-        impulses, attackSpectrums, sustainSpectrums, decaySpectrums, centroids, rolloffs, rmss, bandwidths, crossingRates, decayTimes, tunings = [], [], [], [], [], [], [], [], [], [], []
+        impulses, attackSpectrums, sustainSpectrums, decaySpectrums, centroids, rolloffs, rmss, bandwidths, \
+        crossingRates, spreads, entropies, inharmonicities, noisinesses, oddEvenRatios, decayTimes, \
+        tunings = [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []
 
         for impulseFile in os.listdir(os.fsencode(seriesDirectory)):
             impulseFileName = seriesDirectory + "/" + os.fsdecode(impulseFile)
+            # librosa loading
             print("Loading file: " + impulseFileName)
             impulse, samplingRate = librosa.load(impulseFileName)
+            # iracema loading
+            impulseIRA = iracema.Audio(impulseFileName)
+            impulseFFT = iracema.spectral.fft(impulseIRA, window_size=2048, hop_size=1024)
+            pitch = iracema.pitch.hps(impulseFFT, minf0=50, maxf0=500)
+            harmonics = iracema.harmonics.extract(impulseFFT, pitch)
 
             if centroid_flag:
                 centroids.append(np.mean(librosa.feature.spectral_centroid(impulse)))
@@ -100,6 +114,16 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
                 bandwidths.append(np.mean(librosa.feature.spectral_bandwidth(impulse)))
             if crossingRate_flag:
                 crossingRates.append(np.mean(librosa.feature.zero_crossing_rate(impulse)))
+            if spread_flag:
+                spreads.append(np.mean(iracema.features.spectral_centroid(impulseFFT).data))
+            if entropy_flag:
+                entropies.append(np.mean(iracema.features.spectral_entropy(impulseFFT).data))
+            #if inharmonicity_flag:
+            #    inharmonicities.append(np.mean(iracema.features.inharmonicity(impulseFFT, harmonics)))
+            if noisiness_flag:
+                noisinesses.append(np.mean(iracema.features.noisiness(impulseFFT, harmonics['magnitude']).data))
+            #if oddeven_flag:
+            #    oddEvenRatios.append(np.mean(iracema.features.oer(harmonics)))
             if rms_flag:
                 rmss.append(CalculateRMS(impulse))
             if tuning_flag:
@@ -139,6 +163,16 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         bandwidth_deviation.append((np.std(bandwidths)))
         zeroCrossingRate_values.append(np.mean(crossingRates))
         zeroCrossingRate_deviations.append(np.std(crossingRates))
+        spread_values.append(np.mean(spreads))
+        spread_deviations.append(np.std(spreads))
+        entropy_values.append(np.mean(entropies))
+        entropy_deviations.append(np.std(entropies))
+        #inharmonicity_values.append(np.mean(inharmonicities))
+        #inharmonicity_deviations.append(np.std(inharmonicities))
+        noisiness_values.append(np.mean(noisinesses))
+        noisiness_deviations.append(np.std(noisinesses))
+        #oddEvenRatio_values.append(np.mean(oddEvenRatios))
+        #oddEvenRatio_deviations.append(np.std(oddEvenRatios))
         rms_values.append(np.mean(rmss))
         rms_deviations.append(np.std(rmss))
         decayTime_values.append(np.mean(decayTimes))
@@ -158,7 +192,17 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     if bandwidth_flag:
         data_array = np.vstack((data_array, bandwidth_values, bandwidth_deviation))
     if crossingRate_flag:
-        data_array = np.vstack((data_array, zeroCrossingRate_values, zeroCrossingRate_values))
+        data_array = np.vstack((data_array, zeroCrossingRate_values, zeroCrossingRate_deviations))
+    if spread_flag:
+        data_array = np.vstack((data_array, spread_values, spread_deviations))
+    if entropy_flag:
+        data_array = np.vstack((data_array, entropy_values, entropy_deviations))
+    #if inharmonicity_flag:
+    #    data_array = np.vstack((data_array, inharmonicity_values, inharmonicity_deviations))
+    if noisiness_flag:
+        data_array = np.vstack((data_array, noisiness_values, noisiness_deviations))
+    #if oddeven_flag:
+    #    data_array = np.vstack((data_array, oddEvenRatio_values, oddEvenRatio_deviations))
     if decayTime_flag:
         data_array = np.vstack((data_array, decayTime_values, decayTime_deviations))
     if tuning_flag:
@@ -183,6 +227,21 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         if crossingRate_flag:
             dataWriter.writerow(zeroCrossingRate_values)
             dataWriter.writerow(zeroCrossingRate_deviations)
+        if spread_flag:
+            dataWriter.writerow(spread_values)
+            dataWriter.writerow(spread_deviations)
+        if entropy_flag:
+            dataWriter.writerow(entropy_values)
+            dataWriter.writerow(entropy_deviations)
+    #    if inharmonicity_flag:
+    #        dataWriter.writerow(inharmonicity_values)
+    #        dataWriter.writerow(inharmonicity_deviations)
+        if noisiness_flag:
+            dataWriter.writerow(noisiness_values)
+            dataWriter.writerow(noisiness_deviations)
+    #    if oddeven_flag:
+    #        dataWriter.writerow(oddEvenRatio_values)
+    #        dataWriter.writerow(oddEvenRatio_deviations)
         if decayTime_flag:
             dataWriter.writerow(decayTime_values)
             dataWriter.writerow(decayTime_deviations)
