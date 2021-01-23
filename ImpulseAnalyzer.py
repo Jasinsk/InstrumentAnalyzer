@@ -12,6 +12,11 @@ import csv
 # The plots of these results are saved into the output directory.
 # Spectral and energy parameters are also calculated and saved into the output directory.
 
+class Harmonics:
+    def __init__(self, frequencies, amplitudes):
+        self.frequencies = frequencies
+        self.amplitudes = amplitudes
+
 def InsertIntoVstack(vector, stack):
     if stack == []:  # Not very elegant way to make sure the first impulse is loaded in correctly
         stack = vector
@@ -25,18 +30,20 @@ def CalculateAverageVector(Vectors): # Takes a vector of vectors and calculates 
     return averageVector
 
 def CalculateFFTs(takes, samplingRate, attackTime, sustainTime): # Takes array of impulses and creates array of spectrums
-    attackSpectrums, sustainSpectrums, decaySpectrums = [], [], []
-    attackFrequencies, sustainFrequencies, decayFrequencies = 0, 0, 0
+    attackSpectrums, sustainSpectrums, decaySpectrums, fullSpectrums = [], [], [], []
+    attackFrequencies, sustainFrequencies, decayFrequencies, fullFrequencies = 0, 0, 0, 0
     for take in takes:
+        fullFrequencies, fullSpectrum = signal.periodogram(take, samplingRate, scaling="spectrum")
         attackFrequencies, attackSpectrum = signal.periodogram(take[:int(attackTime*samplingRate)], samplingRate, scaling="spectrum")
         sustainFrequencies, sustainSpectrum = signal.periodogram(take[int(attackTime*samplingRate):int(sustainTime*samplingRate)], samplingRate, scaling="spectrum")
         decayFrequencies, decaySpectrum = signal.periodogram(take[int(sustainTime*samplingRate):], samplingRate, scaling="spectrum")
 
+        fullSpectrums = InsertIntoVstack(fullSpectrum.real, fullSpectrums)
         attackSpectrums = InsertIntoVstack(attackSpectrum.real, attackSpectrums)
         sustainSpectrums = InsertIntoVstack(sustainSpectrum.real, sustainSpectrums)
         decaySpectrums = InsertIntoVstack(decaySpectrum.real, decaySpectrums)
 
-    return attackFrequencies, attackSpectrums, sustainFrequencies, sustainSpectrums, decayFrequencies, decaySpectrums
+    return fullSpectrums, fullFrequencies, attackFrequencies, attackSpectrums, sustainFrequencies, sustainSpectrums, decayFrequencies, decaySpectrums
 
 def CalculateRMS(signal):
     return np.sum(librosa.feature.rmse(signal))
@@ -54,6 +61,54 @@ def CalculateDecayTime(impulse, windowLength = 2048, hopsize = 1024, ratio = 0.1
             decayTime = envelope.time[i] - peakTime
             break
     return decayTime
+
+def CreateMathematicalHarmonicFrequencyVector(pitch, n):
+    freq = []
+    for i in range (1, n):
+        freq.append(pitch * i)
+    return freq
+
+def ExtractHarmonicDataFromSpectrums(spectrums, spectrumFrequencies, mathHarmonicFrequencies, bufforInHZ = 5):
+    buffor = int(bufforInHZ/(spectrumFrequencies[1]-spectrumFrequencies[0]))
+    harmonicData = []
+
+    for spectrum in spectrums:
+        amplitudes = []
+        harmonicFrequencies = []
+        harmonicNumber = 0
+
+        for fftSample in range (0, len(spectrum)):
+            if spectrumFrequencies[fftSample] > mathHarmonicFrequencies[harmonicNumber]:
+                peakValue = 0
+                peakFrequency = 0
+
+                for i in range (fftSample-buffor, fftSample+buffor):
+                    if spectrum[i] > peakValue:
+                        peakValue = spectrum[i]
+                        peakFrequency = spectrumFrequencies[i]
+
+                amplitudes.append(peakValue)
+                harmonicFrequencies.append(peakFrequency)
+
+                if harmonicNumber < len(mathHarmonicFrequencies) - 1:
+                    harmonicNumber = harmonicNumber + 1
+                else:
+                    break
+
+        print(harmonicFrequencies)
+
+        if False: # showing found harmonics and spectrum for debugging
+            x = []
+            for y in range(0, len(harmonicFrequencies)):
+                x.append(y)
+            plt.subplot(121)
+            plt.plot(spectrumFrequencies, spectrum)
+            plt.subplot(122)
+            plt.bar(x, amplitudes)
+            plt.show()
+
+        harmonicData.append(Harmonics(harmonicFrequencies, amplitudes))
+    return harmonicData
 
 def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fileNameAppendix, attackTime, sustainTime, decayTime_flag):
 
@@ -89,6 +144,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         impulses, attackSpectrums, sustainSpectrums, decaySpectrums, centroids, rolloffs, rmss, bandwidths, \
         crossingRates, spreads, entropies, inharmonicities, noisinesses, oddEvenRatios, decayTimes, \
         tunings = [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []
+        pitchHz = 0
 
         for impulseFile in os.listdir(os.fsencode(seriesDirectory)):
             impulseFileName = seriesDirectory + "/" + os.fsdecode(impulseFile)
@@ -99,6 +155,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             impulseIRA = iracema.Audio(impulseFileName)
             impulseFFT = iracema.spectral.fft(impulseIRA, window_size=2048, hop_size=1024)
             pitch = iracema.pitch.hps(impulseFFT, minf0=50, maxf0=500)
+            pitchHz = np.median(pitch.data)
             harmonics = iracema.harmonics.extract(impulseFFT, pitch)
 
             if centroid_flag:
@@ -128,8 +185,11 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
 
             impulses = InsertIntoVstack(impulse, impulses)
 
-        attackFrequencies, attackSpectrums, sustainFrequencies, sustainSpectrums, decayFrequencies, decaySpectrums = \
+        fullSpectrums, fullFrequencies, attackFrequencies, attackSpectrums, sustainFrequencies, sustainSpectrums, decayFrequencies, decaySpectrums = \
             CalculateFFTs(impulses, samplingRate, attackTime, sustainTime)
+
+        mathHarmFreq = CreateMathematicalHarmonicFrequencyVector(pitchHz, n=15)
+        harmonicData = ExtractHarmonicDataFromSpectrums(fullSpectrums, fullFrequencies, mathHarmFreq, bufforInHZ=20)
 
         avrAttackSpectrum = CalculateAverageVector(attackSpectrums)
         avrSustainSpectrum = CalculateAverageVector(sustainSpectrums)
