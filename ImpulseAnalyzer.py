@@ -62,6 +62,18 @@ def CalculateDecayTime(impulse, windowLength = 2048, hopsize = 1024, ratio = 0.1
             break
     return decayTime
 
+def CalculateOERs(harmonicsData):
+    oers = []
+    for take in harmonicsData:
+        odd, even = 0, 0
+        for i in range (0, len(take.amplitudes)):
+            if (i+1)%2 == 1:
+                odd = odd + pow(take.amplitudes[i], 2)
+            else:
+                even = even + pow(take.amplitudes[i], 2)
+        oers.append(odd/even)
+    return oers
+
 def CreateMathematicalHarmonicFrequencyVector(pitch, n):
     freq = []
     for i in range (1, n):
@@ -95,9 +107,8 @@ def ExtractHarmonicDataFromSpectrums(spectrums, spectrumFrequencies, mathHarmoni
                 else:
                     break
 
-        print(harmonicFrequencies)
-
-        if False: # showing found harmonics and spectrum for debugging
+        # showing found harmonics and spectrum for debugging
+        if False:
             x = []
             for y in range(0, len(harmonicFrequencies)):
                 x.append(y)
@@ -190,6 +201,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
 
         mathHarmFreq = CreateMathematicalHarmonicFrequencyVector(pitchHz, n=15)
         harmonicData = ExtractHarmonicDataFromSpectrums(fullSpectrums, fullFrequencies, mathHarmFreq, bufforInHZ=20)
+        oddEvenRatios = CalculateOERs(harmonicData)
 
         avrAttackSpectrum = CalculateAverageVector(attackSpectrums)
         avrSustainSpectrum = CalculateAverageVector(sustainSpectrums)
@@ -226,8 +238,8 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         #inharmonicity_deviations.append(np.std(inharmonicities))
         noisiness_values.append(np.mean(noisinesses))
         noisiness_deviations.append(np.std(noisinesses))
-        #oddEvenRatio_values.append(np.mean(oddEvenRatios))
-        #oddEvenRatio_deviations.append(np.std(oddEvenRatios))
+        oddEvenRatio_values.append(np.mean(oddEvenRatios))
+        oddEvenRatio_deviations.append(np.std(oddEvenRatios))
         rms_values.append(np.mean(rmss))
         rms_deviations.append(np.std(rmss))
         decayTime_values.append(np.mean(decayTimes))
@@ -256,8 +268,8 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     #    data_array = np.vstack((data_array, inharmonicity_values, inharmonicity_deviations))
     if noisiness_flag:
         data_array = np.vstack((data_array, noisiness_values, noisiness_deviations))
-    #if oddeven_flag:
-    #    data_array = np.vstack((data_array, oddEvenRatio_values, oddEvenRatio_deviations))
+    if oddeven_flag:
+        data_array = np.vstack((data_array, oddEvenRatio_values, oddEvenRatio_deviations))
     if decayTime_flag:
         data_array = np.vstack((data_array, decayTime_values, decayTime_deviations))
     if tuning_flag:
@@ -294,9 +306,9 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         if noisiness_flag:
             dataWriter.writerow(noisiness_values)
             dataWriter.writerow(noisiness_deviations)
-    #    if oddeven_flag:
-    #        dataWriter.writerow(oddEvenRatio_values)
-    #        dataWriter.writerow(oddEvenRatio_deviations)
+        if oddeven_flag:
+            dataWriter.writerow(oddEvenRatio_values)
+            dataWriter.writerow(oddEvenRatio_deviations)
         if decayTime_flag:
             dataWriter.writerow(decayTime_values)
             dataWriter.writerow(decayTime_deviations)
