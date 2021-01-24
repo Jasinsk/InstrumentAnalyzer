@@ -25,6 +25,13 @@ def InsertIntoVstack(vector, stack):
 
     return stack
 
+def EstimateFundamentalPitch(harmonicFrequencies):
+    fundamentalPitches = []
+    for i in range (0, len(harmonicFrequencies)):
+        fundamentalPitches.append(harmonicFrequencies[i]/(i+1))
+    return np.mean(fundamentalPitches)
+
+
 def CalculateAverageVector(Vectors): # Takes a vector of vectors and calculates a average vector
     averageVector = np.mean(Vectors, axis=0)
     return averageVector
@@ -68,9 +75,9 @@ def CalculateOERs(harmonicsData):
         odd, even = 0, 0
         for i in range (0, len(take.amplitudes)):
             if (i+1)%2 == 1:
-                odd = odd + pow(take.amplitudes[i], 2)
+                odd += pow(take.amplitudes[i], 2)
             else:
-                even = even + pow(take.amplitudes[i], 2)
+                even += pow(take.amplitudes[i], 2)
         oers.append(odd/even)
     return oers
 
@@ -80,13 +87,25 @@ def CalculateTristimulus(harmonicsData):
         allAmplitudes = 0
         fiveUpAmplitudes = 0
         for i in range (0, len(take.amplitudes)):
-            allAmplitudes = allAmplitudes + take.amplitudes[i]
+            allAmplitudes += take.amplitudes[i]
             if i >= 5:
-                fiveUpAmplitudes = fiveUpAmplitudes + take.amplitudes[i]
+                fiveUpAmplitudes += take.amplitudes[i]
         tristimulus1s.append(take.amplitudes[0]/allAmplitudes)
         tristimulus2s.append((take.amplitudes[1] + take.amplitudes[2] + take.amplitudes[3])/allAmplitudes)
         tristimulus3s.append(fiveUpAmplitudes/allAmplitudes)
     return tristimulus1s, tristimulus2s, tristimulus3s
+
+def CalculateInharmonicity(harmonicsData):
+    inharmonicities = []
+    for take in harmonicsData:
+        fundumentalPitch = EstimateFundamentalPitch(take.frequencies)
+        topInharmonicity = 0
+        allAmplitudes = 0
+        for i in range(0,len(take.frequencies)):
+            topInharmonicity += (abs(take.frequencies[i]-fundumentalPitch*(i+1))*pow(take.amplitudes[i], 2))
+            allAmplitudes += pow(take.amplitudes[i], 2)
+        inharmonicities.append((2*topInharmonicity)/(fundumentalPitch*allAmplitudes))
+    return inharmonicities
 
 def CreateMathematicalHarmonicFrequencyVector(pitch, n):
     freq = []
@@ -197,8 +216,6 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
                 spreads.append(np.mean(iracema.features.spectral_centroid(impulseFFT).data))
             if entropy_flag:
                 entropies.append(np.mean(iracema.features.spectral_entropy(impulseFFT).data))
-            #if inharmonicity_flag:
-            #    inharmonicities.append(np.mean(iracema.features.inharmonicity(impulseFFT, harmonics)))
             if noisiness_flag:
                 noisinesses.append(np.mean(iracema.features.noisiness(impulseFFT, harmonics['magnitude']).data))
             if rms_flag:
@@ -219,6 +236,8 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             oddEvenRatios = CalculateOERs(harmonicData)
         if tristimulus_flag:
             tristimulus1s, tristimulus2s, tristimulus3s = CalculateTristimulus(harmonicData)
+        if inharmonicity_flag:
+            inharmonicities = CalculateInharmonicity(harmonicData)
 
         avrAttackSpectrum = CalculateAverageVector(attackSpectrums)
         avrSustainSpectrum = CalculateAverageVector(sustainSpectrums)
@@ -251,8 +270,8 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         spread_deviations.append(np.std(spreads))
         entropy_values.append(np.mean(entropies))
         entropy_deviations.append(np.std(entropies))
-        #inharmonicity_values.append(np.mean(inharmonicities))
-        #inharmonicity_deviations.append(np.std(inharmonicities))
+        inharmonicity_values.append(np.mean(inharmonicities))
+        inharmonicity_deviations.append(np.std(inharmonicities))
         noisiness_values.append(np.mean(noisinesses))
         noisiness_deviations.append(np.std(noisinesses))
         oddEvenRatio_values.append(np.mean(oddEvenRatios))
@@ -287,8 +306,8 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         data_array = np.vstack((data_array, spread_values, spread_deviations))
     if entropy_flag:
         data_array = np.vstack((data_array, entropy_values, entropy_deviations))
-    #if inharmonicity_flag:
-    #    data_array = np.vstack((data_array, inharmonicity_values, inharmonicity_deviations))
+    if inharmonicity_flag:
+        data_array = np.vstack((data_array, inharmonicity_values, inharmonicity_deviations))
     if noisiness_flag:
         data_array = np.vstack((data_array, noisiness_values, noisiness_deviations))
     if oddeven_flag:
@@ -327,9 +346,9 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         if entropy_flag:
             dataWriter.writerow(entropy_values)
             dataWriter.writerow(entropy_deviations)
-    #    if inharmonicity_flag:
-    #        dataWriter.writerow(inharmonicity_values)
-    #        dataWriter.writerow(inharmonicity_deviations)
+        if inharmonicity_flag:
+            dataWriter.writerow(inharmonicity_values)
+            dataWriter.writerow(inharmonicity_deviations)
         if noisiness_flag:
             dataWriter.writerow(noisiness_values)
             dataWriter.writerow(noisiness_deviations)
