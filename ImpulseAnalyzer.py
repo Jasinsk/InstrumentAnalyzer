@@ -74,6 +74,20 @@ def CalculateOERs(harmonicsData):
         oers.append(odd/even)
     return oers
 
+def CalculateTristimulus(harmonicsData):
+    tristimulus1s, tristimulus2s, tristimulus3s = [], [], []
+    for take in harmonicsData:
+        allAmplitudes = 0
+        fiveUpAmplitudes = 0
+        for i in range (0, len(take.amplitudes)):
+            allAmplitudes = allAmplitudes + take.amplitudes[i]
+            if i >= 5:
+                fiveUpAmplitudes = fiveUpAmplitudes + take.amplitudes[i]
+        tristimulus1s.append(take.amplitudes[0]/allAmplitudes)
+        tristimulus2s.append((take.amplitudes[1] + take.amplitudes[2] + take.amplitudes[3])/allAmplitudes)
+        tristimulus3s.append(fiveUpAmplitudes/allAmplitudes)
+    return tristimulus1s, tristimulus2s, tristimulus3s
+
 def CreateMathematicalHarmonicFrequencyVector(pitch, n):
     freq = []
     for i in range (1, n):
@@ -133,10 +147,12 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values, rms_deviations, \
         bandwidth_values, bandwidth_deviation, zeroCrossingRate_values, zeroCrossingRate_deviations, spread_values, spread_deviations, \
         entropy_values, entropy_deviations, inharmonicity_values, inharmonicity_deviations, noisiness_values, noisiness_deviations, \
-        oddEvenRatio_values, oddEvenRatio_deviations, decayTime_values, decayTime_deviations, tuning_values, tuning_deviations = [" "], ["Spectrum Centroid"], ["Centroid Deviation"], \
-            ["Rolloff"], ["Rolloff Deviation"], ["RMS"], ["RMS Deviation"], ["Bandwidth"], ["Bandwidth Deviation"], ["Zero Crossing Rate"], \
+        oddEvenRatio_values, oddEvenRatio_deviations, tristimulus1_values, tristimulus1_deviations, tristimulus2_values, tristimulus2_deviations, \
+        tristimulus3_values, tristimulus3_deviations, decayTime_values, decayTime_deviations, tuning_values, tuning_deviations = [" "], ["Spectrum Centroid"], ["Centroid Deviation"], \
+                ["Rolloff"], ["Rolloff Deviation"], ["RMS"], ["RMS Deviation"], ["Bandwidth"], ["Bandwidth Deviation"], ["Zero Crossing Rate"], \
             ["Zero Crossing Rate Deviation"], ["Spread"], ["Spread Deviation"], ["Entropy"], ["Entropy Deviation"], ["Inharmonicity"], \
             ["Inharmonicity Deaviation"], ["Noisiness"], ["Noisiness Deviations"], ["Odd-Even Ratio"], ["Odd-Even Ratio Deviation"], \
+            ["Tristimulus 1"], ["Tristimulus 1 Deviations"], ["Tristimulus 2"], ["Tristimulus 2 Deviations"], ["Tristimulus 3"], ["Tristimulus 3 Deviations"], \
             ["Decay Time"], ["Decay Time Deviation"], ["Tuning"], ["Tuning Deviation"]
 
 
@@ -146,15 +162,15 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
 
     # Flags used to decide which parameters will be calculated
     centroid_flag, rolloff_flag, rms_flag, bandwidth_flag, crossingRate_flag, spread_flag, entropy_flag, inharmonicity_flag, \
-    noisiness_flag, oddeven_flag, tuning_flag = True, True, True, True, True, True, True, True, True, True, True
+    noisiness_flag, oddeven_flag, tristimulus_flag, tuning_flag = True, True, True, True, True, True, True, True, True, True, True, True
 
     # Calculating spectrums and parameters
     for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
         seriesDirectory = inputDirectory + "/" + os.fsdecode(seriesDirectory)
         print("Entering folder: " + seriesDirectory)
         impulses, attackSpectrums, sustainSpectrums, decaySpectrums, centroids, rolloffs, rmss, bandwidths, \
-        crossingRates, spreads, entropies, inharmonicities, noisinesses, oddEvenRatios, decayTimes, \
-        tunings = [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []
+        crossingRates, spreads, entropies, inharmonicities, noisinesses, oddEvenRatios, tristimulus1s, \
+        tristimulus2s, tristimulus3s, decayTimes, tunings = [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []
         pitchHz = 0
 
         for impulseFile in os.listdir(os.fsencode(seriesDirectory)):
@@ -185,8 +201,6 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             #    inharmonicities.append(np.mean(iracema.features.inharmonicity(impulseFFT, harmonics)))
             if noisiness_flag:
                 noisinesses.append(np.mean(iracema.features.noisiness(impulseFFT, harmonics['magnitude']).data))
-            #if oddeven_flag:
-            #    oddEvenRatios.append(np.mean(iracema.features.oer(harmonics)))
             if rms_flag:
                 rmss.append(CalculateRMS(impulse))
             if tuning_flag:
@@ -201,7 +215,10 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
 
         mathHarmFreq = CreateMathematicalHarmonicFrequencyVector(pitchHz, n=15)
         harmonicData = ExtractHarmonicDataFromSpectrums(fullSpectrums, fullFrequencies, mathHarmFreq, bufforInHZ=20)
-        oddEvenRatios = CalculateOERs(harmonicData)
+        if oddeven_flag:
+            oddEvenRatios = CalculateOERs(harmonicData)
+        if tristimulus_flag:
+            tristimulus1s, tristimulus2s, tristimulus3s = CalculateTristimulus(harmonicData)
 
         avrAttackSpectrum = CalculateAverageVector(attackSpectrums)
         avrSustainSpectrum = CalculateAverageVector(sustainSpectrums)
@@ -240,6 +257,12 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         noisiness_deviations.append(np.std(noisinesses))
         oddEvenRatio_values.append(np.mean(oddEvenRatios))
         oddEvenRatio_deviations.append(np.std(oddEvenRatios))
+        tristimulus1_values.append(np.mean(tristimulus1s))
+        tristimulus1_deviations.append(np.std(tristimulus1s))
+        tristimulus2_values.append(np.mean(tristimulus2s))
+        tristimulus2_deviations.append(np.std(tristimulus2s))
+        tristimulus3_values.append(np.mean(tristimulus3s))
+        tristimulus3_deviations.append(np.std(tristimulus3s))
         rms_values.append(np.mean(rmss))
         rms_deviations.append(np.std(rmss))
         decayTime_values.append(np.mean(decayTimes))
@@ -270,6 +293,10 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         data_array = np.vstack((data_array, noisiness_values, noisiness_deviations))
     if oddeven_flag:
         data_array = np.vstack((data_array, oddEvenRatio_values, oddEvenRatio_deviations))
+    if tristimulus_flag:
+        data_array = np.vstack((data_array, tristimulus1_values, tristimulus1_deviations))
+        data_array = np.vstack((data_array, tristimulus2_values, tristimulus2_deviations))
+        data_array = np.vstack((data_array, tristimulus3_values, tristimulus3_deviations))
     if decayTime_flag:
         data_array = np.vstack((data_array, decayTime_values, decayTime_deviations))
     if tuning_flag:
@@ -309,6 +336,13 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         if oddeven_flag:
             dataWriter.writerow(oddEvenRatio_values)
             dataWriter.writerow(oddEvenRatio_deviations)
+        if tristimulus_flag:
+            dataWriter.writerow(tristimulus1_values)
+            dataWriter.writerow(tristimulus1_deviations)
+            dataWriter.writerow(tristimulus2_values)
+            dataWriter.writerow(tristimulus2_deviations)
+            dataWriter.writerow(tristimulus3_values)
+            dataWriter.writerow(tristimulus3_deviations)
         if decayTime_flag:
             dataWriter.writerow(decayTime_values)
             dataWriter.writerow(decayTime_deviations)
