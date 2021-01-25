@@ -38,16 +38,16 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     impulseTime, maxAttack, maxSustain, maxDecay = 0, 0, 0, 0
 
     # Flags used to decide which parameters will be calculated
-    centroid_flag, rolloff_flag, rms_flag, bandwidth_flag, crossingRate_flag, spread_flag, entropy_flag, inharmonicity_flag, \
-    noisiness_flag, oddeven_flag, tristimulus_flag, tuning_flag = True, True, True, True, True, True, True, True, True, True, True, True
+    centroid_flag, rolloff_flag, rms_flag, bandwidth_flag, crossingRate_flag, spread_flag, highLowEnergy_flag, entropy_flag, inharmonicity_flag, \
+    noisiness_flag, oddeven_flag, tristimulus_flag, tuning_flag = True, True, True, True, True, True, True, True, True, True, True, True, True
 
     # Calculating spectrums and parameters
     for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
         seriesDirectory = inputDirectory + "/" + os.fsdecode(seriesDirectory)
         print("Entering folder: " + seriesDirectory)
         impulses, attackSpectrums, sustainSpectrums, decaySpectrums, centroids, rolloffs, rmss, bandwidths, \
-        crossingRates, spreads, entropies, inharmonicities, noisinesses, oddEvenRatios, tristimulus1s, \
-        tristimulus2s, tristimulus3s, decayTimes, tunings, pitchesHz =  [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []
+        crossingRates, spreads, highLowEnergies, entropies, inharmonicities, noisinesses, oddEvenRatios, tristimulus1s, \
+        tristimulus2s, tristimulus3s, decayTimes, tunings, pitchesHz =  [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []
 
         for impulseFile in os.listdir(os.fsencode(seriesDirectory)):
             impulseFileName = seriesDirectory + "/" + os.fsdecode(impulseFile)
@@ -87,6 +87,8 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         fullSpectrums, fullFrequencies, attackFrequencies, attackSpectrums, sustainFrequencies, sustainSpectrums, decayFrequencies, decaySpectrums = \
             pc.CalculateFFTs(impulses, samplingRate, attackTime, sustainTime)
 
+        if highLowEnergy_flag:
+            highLowEnergies = pc.CalculateHighEnergyLowEnergyRatio(fullSpectrums, fullFrequencies)
         # If harmonic data makes no sense it may be caused by improper fundumental pitch detection.
         # Check in parameterData.csv whether the fundumentals were properly found.
         # If not, then manually add the correct pitch and rerun the offending sounds.
@@ -132,6 +134,8 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         zeroCrossingRate_deviations.append(np.std(crossingRates))
         spread_values.append(np.mean(spreads))
         spread_deviations.append(np.std(spreads))
+        highLowEnergy_values.append(np.mean(highLowEnergies))
+        highLowEnegry_deviations.append(np.std(highLowEnergies))
         entropy_values.append(np.mean(entropies))
         entropy_deviations.append(np.std(entropies))
         inharmonicity_values.append(np.mean(inharmonicities))
@@ -168,6 +172,8 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         data_array = np.vstack((data_array, zeroCrossingRate_values, zeroCrossingRate_deviations))
     if spread_flag:
         data_array = np.vstack((data_array, spread_values, spread_deviations))
+    if highLowEnergy_flag:
+        data_array = np.vstack((data_array, highLowEnergy_values, highLowEnegry_deviations))
     if entropy_flag:
         data_array = np.vstack((data_array, entropy_values, entropy_deviations))
     if inharmonicity_flag:
@@ -207,6 +213,9 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         if spread_flag:
             dataWriter.writerow(spread_values)
             dataWriter.writerow(spread_deviations)
+        if highLowEnergy_flag:
+            dataWriter.writerow(highLowEnergy_values)
+            dataWriter.writerow(highLowEnegry_deviations)
         if entropy_flag:
             dataWriter.writerow(entropy_values)
             dataWriter.writerow(entropy_deviations)

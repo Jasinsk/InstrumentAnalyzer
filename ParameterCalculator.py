@@ -148,3 +148,15 @@ def CalculateInharmonicity(harmonicsData):
             allAmplitudes += pow(take.amplitudes[i], 2)
         inharmonicities.append((2*topInharmonicity)/(fundumentalPitch*allAmplitudes))
     return inharmonicities
+
+def CalculateHighEnergyLowEnergyRatio(spectrums, frequencies, boundaryFrequency = 1500):
+    highlowenergies = []
+    for take in spectrums:
+        highEnergy, lowEnergy = 0, 0
+        for sample in range(0, len(take)):
+            if frequencies[sample] < boundaryFrequency:
+                highEnergy += pow(take[sample], 2)
+            else:
+                lowEnergy += pow(take[sample], 2)
+        highlowenergies.append(highEnergy/lowEnergy)
+    return highlowenergies
