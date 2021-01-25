@@ -1,5 +1,6 @@
 import numpy as np
 from scipy import signal
+import matplotlib.pyplot as plt
 import librosa
 import iracema
 
@@ -79,6 +80,8 @@ def ExtractHarmonicDataFromSpectrums(spectrums, spectrumFrequencies, mathHarmoni
 
         # showing found harmonics and spectrum for debugging
         if False:
+            print(harmonicFrequencies)
+
             x = []
             for y in range(0, len(harmonicFrequencies)):
                 x.append(y)

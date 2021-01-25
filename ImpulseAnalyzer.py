@@ -24,15 +24,14 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     data_array = []
     series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values, rms_deviations, \
         bandwidth_values, bandwidth_deviation, zeroCrossingRate_values, zeroCrossingRate_deviations, spread_values, spread_deviations, \
-        entropy_values, entropy_deviations, inharmonicity_values, inharmonicity_deviations, noisiness_values, noisiness_deviations, \
+        highLowEnergy_values, highLowEnegry_deviations, entropy_values, entropy_deviations, inharmonicity_values, inharmonicity_deviations, noisiness_values, noisiness_deviations, \
         oddEvenRatio_values, oddEvenRatio_deviations, tristimulus1_values, tristimulus1_deviations, tristimulus2_values, tristimulus2_deviations, \
-        tristimulus3_values, tristimulus3_deviations, decayTime_values, decayTime_deviations, tuning_values, tuning_deviations = [" "], ["Spectrum Centroid"], ["Centroid Deviation"], \
+        tristimulus3_values, tristimulus3_deviations, decayTime_values, decayTime_deviations, tuning_values, tuning_deviations, foundFundumentalPitches = [" "], ["Spectrum Centroid"], ["Centroid Deviation"], \
                 ["Rolloff"], ["Rolloff Deviation"], ["RMS"], ["RMS Deviation"], ["Bandwidth"], ["Bandwidth Deviation"], ["Zero Crossing Rate"], \
-            ["Zero Crossing Rate Deviation"], ["Spread"], ["Spread Deviation"], ["Entropy"], ["Entropy Deviation"], ["Inharmonicity"], \
+            ["Zero Crossing Rate Deviation"], ["Spread"], ["Spread Deviation"], ["High Energy - Low Energy Ratio"], ["High Energy - Low Energy Ratio Deviations"], ["Entropy"], ["Entropy Deviation"], ["Inharmonicity"], \
             ["Inharmonicity Deaviation"], ["Noisiness"], ["Noisiness Deviations"], ["Odd-Even Ratio"], ["Odd-Even Ratio Deviation"], \
             ["Tristimulus 1"], ["Tristimulus 1 Deviations"], ["Tristimulus 2"], ["Tristimulus 2 Deviations"], ["Tristimulus 3"], ["Tristimulus 3 Deviations"], \
-            ["Decay Time"], ["Decay Time Deviation"], ["Tuning"], ["Tuning Deviation"]
-
+            ["Decay Time"], ["Decay Time Deviation"], ["Tuning"], ["Tuning Deviation"], ["Average Found Fundumental Pitches"]
 
     allAttackSpectrums, allSustainSpectrums, allDecaySpectrums, allAttackFrequencies, allSustainFrequencies, \
             allDecayFrequencies, seriesNames = [], [], [], [], [], [], []
@@ -48,8 +47,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         print("Entering folder: " + seriesDirectory)
         impulses, attackSpectrums, sustainSpectrums, decaySpectrums, centroids, rolloffs, rmss, bandwidths, \
         crossingRates, spreads, entropies, inharmonicities, noisinesses, oddEvenRatios, tristimulus1s, \
-        tristimulus2s, tristimulus3s, decayTimes, tunings = [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []
-        pitchHz = 0
+        tristimulus2s, tristimulus3s, decayTimes, tunings, pitchesHz =  [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []
 
         for impulseFile in os.listdir(os.fsencode(seriesDirectory)):
             impulseFileName = seriesDirectory + "/" + os.fsdecode(impulseFile)
@@ -60,7 +58,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             impulseIRA = iracema.Audio(impulseFileName)
             impulseFFT = iracema.spectral.fft(impulseIRA, window_size=2048, hop_size=1024)
             pitch = iracema.pitch.hps(impulseFFT, minf0=50, maxf0=500)
-            pitchHz = np.median(pitch.data)
+            pitchesHz.append(np.median(pitch.data))
             harmonics = iracema.harmonics.extract(impulseFFT, pitch)
 
             if centroid_flag:
@@ -89,7 +87,14 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         fullSpectrums, fullFrequencies, attackFrequencies, attackSpectrums, sustainFrequencies, sustainSpectrums, decayFrequencies, decaySpectrums = \
             pc.CalculateFFTs(impulses, samplingRate, attackTime, sustainTime)
 
-        mathHarmFreq = pc.CreateMathematicalHarmonicFrequencyVector(pitchHz, n=15)
+        # If harmonic data makes no sense it may be caused by improper fundumental pitch detection.
+        # Check in parameterData.csv whether the fundumentals were properly found.
+        # If not, then manually add the correct pitch and rerun the offending sounds.
+        #fundumentalPitch = 83
+        fundumentalPitch = np.median(pitchesHz)
+        foundFundumentalPitches.append(fundumentalPitch)
+
+        mathHarmFreq = pc.CreateMathematicalHarmonicFrequencyVector(fundumentalPitch, n=15)
         harmonicData = pc.ExtractHarmonicDataFromSpectrums(fullSpectrums, fullFrequencies, mathHarmFreq, bufforInHZ=20)
         if oddeven_flag:
             oddEvenRatios = pc.CalculateOERs(harmonicData)
@@ -227,6 +232,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         if tuning_flag:
             dataWriter.writerow(tuning_values)
             dataWriter.writerow(tuning_deviations)
+        dataWriter.writerow(foundFundumentalPitches)
 
     print("Data saved to: " + parameterFileName + '_' + fileNameAppendix)
 
