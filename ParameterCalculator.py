@@ -1,4 +1,5 @@
 import numpy as np
+import math
 from scipy import signal
 import matplotlib.pyplot as plt
 import librosa
@@ -110,6 +111,23 @@ def CalculateDecayTime(impulse, windowLength = 2048, hopsize = 1024, ratio = 0.1
             decayTime = envelope.time[i] - peakTime
             break
     return decayTime
+
+# Calculate log of attack time of signal. The algorythm was simplified when it comes to finding the start time of attack due to the it giving better results for guitar
+def CalculateLogAttackTime(impulse, windowLength = 256, hopsize = 128, threshold = 0.3):
+    envelope = iracema.features.peak_envelope(impulse, windowLength, hopsize)
+    maxEnv = max(envelope.data)
+    startTime, stopTime = 0, 0
+
+    for i in range(0, len(envelope)):
+        if envelope.data[i] > (maxEnv * threshold):
+            startTime = envelope.time[i]
+            break
+    for i in range(0, len(envelope)):
+        if envelope.data[i] == maxEnv:
+            stopTime = envelope.time[i]
+            break
+
+    return math.log10(stopTime - startTime)
 
 def CalculateOERs(harmonicsData):
     oers = []

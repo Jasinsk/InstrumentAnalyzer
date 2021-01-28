@@ -26,12 +26,12 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         bandwidth_values, bandwidth_deviation, zeroCrossingRate_values, zeroCrossingRate_deviations, spread_values, spread_deviations, \
         highLowEnergy_values, highLowEnegry_deviations, entropy_values, entropy_deviations, inharmonicity_values, inharmonicity_deviations, noisiness_values, noisiness_deviations, \
         oddEvenRatio_values, oddEvenRatio_deviations, tristimulus1_values, tristimulus1_deviations, tristimulus2_values, tristimulus2_deviations, \
-        tristimulus3_values, tristimulus3_deviations, decayTime_values, decayTime_deviations, tuning_values, tuning_deviations, foundFundumentalPitches = [" "], ["Spectrum Centroid"], ["Centroid Deviation"], \
+        tristimulus3_values, tristimulus3_deviations, logAttackTime_values, logAttackTime_deviations, decayTime_values, decayTime_deviations, tuning_values, tuning_deviations, foundFundumentalPitches = [" "], ["Spectrum Centroid"], ["Centroid Deviation"], \
                 ["Rolloff"], ["Rolloff Deviation"], ["RMS"], ["RMS Deviation"], ["Bandwidth"], ["Bandwidth Deviation"], ["Zero Crossing Rate"], \
             ["Zero Crossing Rate Deviation"], ["Spread"], ["Spread Deviation"], ["High Energy - Low Energy Ratio"], ["High Energy - Low Energy Ratio Deviations"], ["Entropy"], ["Entropy Deviation"], ["Inharmonicity"], \
             ["Inharmonicity Deaviation"], ["Noisiness"], ["Noisiness Deviations"], ["Odd-Even Ratio"], ["Odd-Even Ratio Deviation"], \
             ["Tristimulus 1"], ["Tristimulus 1 Deviations"], ["Tristimulus 2"], ["Tristimulus 2 Deviations"], ["Tristimulus 3"], ["Tristimulus 3 Deviations"], \
-            ["Decay Time"], ["Decay Time Deviation"], ["Tuning"], ["Tuning Deviation"], ["Average Found Fundumental Pitches"]
+            ["Log Attack Time"], ["Log Attack Time Deviations"], ["Decay Time"], ["Decay Time Deviation"], ["Tuning"], ["Tuning Deviation"], ["Average Found Fundumental Pitches"]
 
     allAttackSpectrums, allSustainSpectrums, allDecaySpectrums, allAttackFrequencies, allSustainFrequencies, \
             allDecayFrequencies, seriesNames = [], [], [], [], [], [], []
@@ -39,7 +39,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
 
     # Flags used to decide which parameters will be calculated
     centroid_flag, rolloff_flag, rms_flag, bandwidth_flag, crossingRate_flag, spread_flag, highLowEnergy_flag, entropy_flag, inharmonicity_flag, \
-    noisiness_flag, oddeven_flag, tristimulus_flag, tuning_flag = True, True, True, True, True, True, True, True, True, True, True, True, True
+    noisiness_flag, oddeven_flag, tristimulus_flag, logAttackTime_flag, tuning_flag = True, True, True, True, True, True, True, True, True, True, True, True, True, True
 
     # Calculating spectrums and parameters
     for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
@@ -47,7 +47,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         print("Entering folder: " + seriesDirectory)
         impulses, attackSpectrums, sustainSpectrums, decaySpectrums, centroids, rolloffs, rmss, bandwidths, \
         crossingRates, spreads, highLowEnergies, entropies, inharmonicities, noisinesses, oddEvenRatios, tristimulus1s, \
-        tristimulus2s, tristimulus3s, decayTimes, tunings, pitchesHz =  [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []
+        tristimulus2s, tristimulus3s, decayTimes, logAttackTimes, tunings, pitchesHz =  [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []
 
         for impulseFile in os.listdir(os.fsencode(seriesDirectory)):
             impulseFileName = seriesDirectory + "/" + os.fsdecode(impulseFile)
@@ -81,6 +81,8 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
                 tunings.append(np.mean(librosa.estimate_tuning(impulse)))
             if decayTime_flag:
                 decayTimes.append(pc.CalculateDecayTime(impulseIRA))
+            if logAttackTime_flag:
+                logAttackTimes.append(pc.CalculateLogAttackTime(impulseIRA))
 
             impulses = pc.InsertIntoVstack(impulse, impulses)
 
@@ -152,6 +154,8 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         tristimulus3_deviations.append(np.std(tristimulus3s))
         rms_values.append(np.mean(rmss))
         rms_deviations.append(np.std(rmss))
+        logAttackTime_values.append(np.mean(logAttackTimes))
+        logAttackTime_deviations.append(np.std(logAttackTimes))
         decayTime_values.append(np.mean(decayTimes))
         decayTime_deviations.append(np.std(decayTimes))
         tuning_values.append(np.mean(tunings))
@@ -186,6 +190,8 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         data_array = np.vstack((data_array, tristimulus1_values, tristimulus1_deviations))
         data_array = np.vstack((data_array, tristimulus2_values, tristimulus2_deviations))
         data_array = np.vstack((data_array, tristimulus3_values, tristimulus3_deviations))
+    if logAttackTime_flag:
+        data_array = np.vstack((data_array, logAttackTime_values, logAttackTime_deviations))
     if decayTime_flag:
         data_array = np.vstack((data_array, decayTime_values, decayTime_deviations))
     if tuning_flag:
@@ -235,6 +241,9 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             dataWriter.writerow(tristimulus2_deviations)
             dataWriter.writerow(tristimulus3_values)
             dataWriter.writerow(tristimulus3_deviations)
+        if logAttackTime_flag:
+            dataWriter.writerow(logAttackTime_values)
+            dataWriter.writerow(logAttackTime_deviations)
         if decayTime_flag:
             dataWriter.writerow(decayTime_values)
             dataWriter.writerow(decayTime_deviations)
