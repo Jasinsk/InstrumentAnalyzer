@@ -98,6 +98,19 @@ def ExtractHarmonicDataFromSpectrums(spectrums, spectrumFrequencies, mathHarmoni
 def CalculateRMS(signal):
     return np.sum(librosa.feature.rmse(signal))
 
+#Calculates the signals temporal centroid. Only takes into account signal over threshold to disguard silence. Watch out when using signals of different lengths.
+def CalculateTemporalCentroid(impulse, windowLength = 2048, hopsize = 1024, threshold = 0.1):
+    envelope = iracema.features.peak_envelope(impulse, windowLength, hopsize)
+    maxEnv = max(envelope.data)
+    amplitudeSum = sum(envelope.data)
+    ampXTimeSum = 0
+
+    for i in range(0, len(envelope)):
+        if envelope.data[i] > (maxEnv * threshold):
+            ampXTimeSum += envelope.time[i] * envelope.data[i]
+    return (ampXTimeSum/amplitudeSum)
+
+
 def CalculateDecayTime(impulse, windowLength = 2048, hopsize = 1024, ratio = 0.12): # Calculates time between the peak of impulse and it decaying below the value of max*ratio
     envelope = iracema.features.peak_envelope(impulse, windowLength, hopsize)
     maxEnv = max(envelope.data)
