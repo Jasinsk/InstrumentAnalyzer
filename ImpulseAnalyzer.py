@@ -22,12 +22,13 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     samplingRate = 0
     # These variables are used to save the parameter data to a csv file
     data_array = []
-    series_names, centroid_values, centroid_deviations, rolloff_values, rolloff_deviations, rms_values, rms_deviations, \
+    series_names, centroid_values, centroid_deviations,  f0NormalizedCentroid_values, f0NormalizedCentroid_deviations, rolloff_values, rolloff_deviations, rms_values, rms_deviations, \
         bandwidth_values, bandwidth_deviation, zeroCrossingRate_values, zeroCrossingRate_deviations, spread_values, spread_deviations, \
         highLowEnergy_values, highLowEnegry_deviations, entropy_values, entropy_deviations, inharmonicity_values, inharmonicity_deviations, noisiness_values, noisiness_deviations, \
         oddEvenRatio_values, oddEvenRatio_deviations, tristimulus1_values, tristimulus1_deviations, tristimulus2_values, tristimulus2_deviations, \
-        tristimulus3_values, tristimulus3_deviations, temporalCentroid_values, temporalCentroid_deviations, logAttackTime_values, logAttackTime_deviations, decayTime_values, decayTime_deviations, tuning_values, tuning_deviations, foundFundumentalPitches = [" "], ["Spectrum Centroid"], ["Centroid Deviation"], \
-                ["Rolloff"], ["Rolloff Deviation"], ["RMS"], ["RMS Deviation"], ["Bandwidth"], ["Bandwidth Deviation"], ["Zero Crossing Rate"], \
+        tristimulus3_values, tristimulus3_deviations, temporalCentroid_values, temporalCentroid_deviations, logAttackTime_values, logAttackTime_deviations, \
+        decayTime_values, decayTime_deviations, tuning_values, tuning_deviations, foundFundumentalPitches = [" "], ["Spectrum Centroid"], ["Centroid Deviation"], ["F0 Normalized Centroid"], ["F0 Normalized Centroid Deviations"],\
+            ["Rolloff"], ["Rolloff Deviation"], ["RMS"], ["RMS Deviation"], ["Bandwidth"], ["Bandwidth Deviation"], ["Zero Crossing Rate"], \
             ["Zero Crossing Rate Deviation"], ["Spread"], ["Spread Deviation"], ["High Energy - Low Energy Ratio"], ["High Energy - Low Energy Ratio Deviations"], ["Entropy"], ["Entropy Deviation"], ["Inharmonicity"], \
             ["Inharmonicity Deaviation"], ["Noisiness"], ["Noisiness Deviations"], ["Odd-Even Ratio"], ["Odd-Even Ratio Deviation"], \
             ["Tristimulus 1"], ["Tristimulus 1 Deviations"], ["Tristimulus 2"], ["Tristimulus 2 Deviations"], ["Tristimulus 3"], ["Tristimulus 3 Deviations"], \
@@ -38,16 +39,21 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     impulseTime, maxAttack, maxSustain, maxDecay = 0, 0, 0, 0
 
     # Flags used to decide which parameters will be calculated
-    centroid_flag, rolloff_flag, rms_flag, bandwidth_flag, crossingRate_flag, spread_flag, highLowEnergy_flag, entropy_flag, inharmonicity_flag, \
-    noisiness_flag, oddeven_flag, tristimulus_flag, temporalCentroid_flag, logAttackTime_flag, tuning_flag = True, True, True, True, True, True, True, True, True, True, True, True, True, True, True
+    centroid_flag, f0normCentroid_flag, rolloff_flag, rms_flag, bandwidth_flag, crossingRate_flag, spread_flag, highLowEnergy_flag, entropy_flag, inharmonicity_flag, \
+    noisiness_flag, oddeven_flag, tristimulus_flag, temporalCentroid_flag, logAttackTime_flag, tuning_flag = True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True
 
     # Calculating spectrums and parameters
     for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
         seriesDirectory = inputDirectory + "/" + os.fsdecode(seriesDirectory)
         print("Entering folder: " + seriesDirectory)
-        impulses, attackSpectrums, sustainSpectrums, decaySpectrums, centroids, rolloffs, rmss, bandwidths, \
+        impulses, attackSpectrums, sustainSpectrums, decaySpectrums, centroids, f0normCentroids, rolloffs, rmss, bandwidths, \
         crossingRates, spreads, highLowEnergies, entropies, inharmonicities, noisinesses, oddEvenRatios, tristimulus1s, \
-        tristimulus2s, tristimulus3s, temporalCentroids, decayTimes, logAttackTimes, tunings, pitchesHz =  [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []
+        tristimulus2s, tristimulus3s, temporalCentroids, decayTimes, logAttackTimes, tunings, pitchesHz =  [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []
+
+        # If harmonic data and normalized centroids make no sense it may be caused by improper fundumental pitch detection.
+        # Check in parameterData.csv whether the fundumentals were properly found.
+        # If not, then manually add the correct pitch below and rerun the offending sounds.
+        fundumentalPitch = 0
 
         for impulseFile in os.listdir(os.fsencode(seriesDirectory)):
             impulseFileName = seriesDirectory + "/" + os.fsdecode(impulseFile)
@@ -63,6 +69,11 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
 
             if centroid_flag:
                 centroids.append(np.mean(librosa.feature.spectral_centroid(impulse)))
+            if f0normCentroid_flag:
+                if fundumentalPitch == 0:
+                    f0normCentroids.append((np.mean(librosa.feature.spectral_centroid(impulse) / np.median(pitch.data))))
+                else:
+                    f0normCentroids.append((np.mean(librosa.feature.spectral_centroid(impulse) / fundumentalPitch)))
             if rolloff_flag:
                 rolloffs.append(np.mean(librosa.feature.spectral_rolloff(impulse)))
             if bandwidth_flag:
@@ -91,17 +102,13 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         fullSpectrums, fullFrequencies, attackFrequencies, attackSpectrums, sustainFrequencies, sustainSpectrums, decayFrequencies, decaySpectrums = \
             pc.CalculateFFTs(impulses, samplingRate, attackTime, sustainTime)
 
-        if highLowEnergy_flag:
-            highLowEnergies = pc.CalculateHighEnergyLowEnergyRatio(fullSpectrums, fullFrequencies)
-        # If harmonic data makes no sense it may be caused by improper fundumental pitch detection.
-        # Check in parameterData.csv whether the fundumentals were properly found.
-        # If not, then manually add the correct pitch and rerun the offending sounds.
-        #fundumentalPitch = 83
-        fundumentalPitch = np.median(pitchesHz)
+        if fundumentalPitch == 0:
+            fundumentalPitch = np.median(pitchesHz)
         foundFundumentalPitches.append(fundumentalPitch)
-
         mathHarmFreq = pc.CreateMathematicalHarmonicFrequencyVector(fundumentalPitch, n=15)
         harmonicData = pc.ExtractHarmonicDataFromSpectrums(fullSpectrums, fullFrequencies, mathHarmFreq, bufforInHZ=20)
+        if highLowEnergy_flag:
+            highLowEnergies = pc.CalculateHighEnergyLowEnergyRatio(fullSpectrums, fullFrequencies)
         if oddeven_flag:
             oddEvenRatios = pc.CalculateOERs(harmonicData)
         if tristimulus_flag:
@@ -130,6 +137,8 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
 
         centroid_values.append(np.mean(centroids))
         centroid_deviations.append(np.std(centroids))
+        f0NormalizedCentroid_values.append(np.mean(f0normCentroids))
+        f0NormalizedCentroid_deviations.append((np.std(f0normCentroids)))
         rolloff_values.append(np.mean(rolloffs))
         rolloff_deviations.append(np.std(rolloffs))
         bandwidth_values.append(np.mean(bandwidths))
@@ -170,6 +179,8 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     data_array = series_names
     if centroid_flag:
         data_array = np.vstack((data_array, centroid_values, centroid_deviations))
+    if f0normCentroid_flag:
+        data_array = np.vstack((data_array, f0NormalizedCentroid_values, f0NormalizedCentroid_deviations))
     if rolloff_flag:
         data_array = np.vstack((data_array, rolloff_values, rolloff_deviations))
     if rms_flag:
@@ -210,6 +221,9 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         if centroid_flag:
             dataWriter.writerow(centroid_values)
             dataWriter.writerow(centroid_deviations)
+        if f0normCentroid_flag:
+            dataWriter.writerow(f0NormalizedCentroid_values)
+            dataWriter.writerow(f0NormalizedCentroid_deviations)
         if rms_flag:
             dataWriter.writerow(rms_values)
             dataWriter.writerow(rms_deviations)
