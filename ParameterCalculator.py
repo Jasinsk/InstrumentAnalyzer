@@ -95,64 +95,17 @@ def ExtractHarmonicDataFromSpectrums(spectrums, spectrumFrequencies, mathHarmoni
         harmonicData.append(Harmonics(harmonicFrequencies, amplitudes))
     return harmonicData
 
-def CalculateRMS(signal):
-    return np.sum(librosa.feature.rmse(signal))
-
-#Calculates the signals temporal centroid. Only takes into account signal over threshold to disguard silence. Watch out when using signals of different lengths.
-def CalculateTemporalCentroid(impulse, windowLength = 2048, hopsize = 1024, threshold = 0.1):
-    envelope = iracema.features.peak_envelope(impulse, windowLength, hopsize)
-    maxEnv = max(envelope.data)
-    amplitudeSum = sum(envelope.data)
-    ampXTimeSum = 0
-
-    for i in range(0, len(envelope)):
-        if envelope.data[i] > (maxEnv * threshold):
-            ampXTimeSum += envelope.time[i] * envelope.data[i]
-    return (ampXTimeSum/amplitudeSum)
-
-
-def CalculateDecayTime(impulse, windowLength = 2048, hopsize = 1024, ratio = 0.12): # Calculates time between the peak of impulse and it decaying below the value of max*ratio
-    envelope = iracema.features.peak_envelope(impulse, windowLength, hopsize)
-    maxEnv = max(envelope.data)
-    peakTime = 0
-    decayTime = 0
-
-    for i in range(0,len(envelope.data)):
-        if envelope.data[i] == maxEnv:
-            peakTime = envelope.time[i]
-        if maxEnv * ratio > envelope.data[i]:
-            decayTime = envelope.time[i] - peakTime
-            break
-    return decayTime
-
-# Calculate log of attack time of signal. The algorythm was simplified when it comes to finding the start time of attack due to the it giving better results for guitar
-def CalculateLogAttackTime(impulse, windowLength = 256, hopsize = 128, threshold = 0.3):
-    envelope = iracema.features.peak_envelope(impulse, windowLength, hopsize)
-    maxEnv = max(envelope.data)
-    startTime, stopTime = 0, 0
-
-    for i in range(0, len(envelope)):
-        if envelope.data[i] > (maxEnv * threshold):
-            startTime = envelope.time[i]
-            break
-    for i in range(0, len(envelope)):
-        if envelope.data[i] == maxEnv:
-            stopTime = envelope.time[i]
-            break
-
-    return math.log10(stopTime - startTime)
-
-def CalculateOERs(harmonicsData):
-    oers = []
-    for take in harmonicsData:
-        odd, even = 0, 0
-        for i in range (0, len(take.amplitudes)):
-            if (i+1)%2 == 1:
-                odd += pow(take.amplitudes[i], 2)
+def CalculateHighEnergyLowEnergyRatio(spectrums, frequencies, boundaryFrequency = 1500):
+    highlowenergies = []
+    for take in spectrums:
+        highEnergy, lowEnergy = 0, 0
+        for sample in range(0, len(take)):
+            if frequencies[sample] < boundaryFrequency:
+                highEnergy += pow(take[sample], 2)
             else:
-                even += pow(take.amplitudes[i], 2)
-        oers.append(odd/even)
-    return oers
+                lowEnergy += pow(take[sample], 2)
+        highlowenergies.append(highEnergy/lowEnergy)
+    return highlowenergies
 
 def CalculateTristimulus(harmonicsData):
     tristimulus1s, tristimulus2s, tristimulus3s = [], [], []
@@ -180,14 +133,60 @@ def CalculateInharmonicity(harmonicsData):
         inharmonicities.append((2*topInharmonicity)/(fundumentalPitch*allAmplitudes))
     return inharmonicities
 
-def CalculateHighEnergyLowEnergyRatio(spectrums, frequencies, boundaryFrequency = 1500):
-    highlowenergies = []
-    for take in spectrums:
-        highEnergy, lowEnergy = 0, 0
-        for sample in range(0, len(take)):
-            if frequencies[sample] < boundaryFrequency:
-                highEnergy += pow(take[sample], 2)
+def CalculateOERs(harmonicsData):
+    oers = []
+    for take in harmonicsData:
+        odd, even = 0, 0
+        for i in range (0, len(take.amplitudes)):
+            if (i+1)%2 == 1:
+                odd += pow(take.amplitudes[i], 2)
             else:
-                lowEnergy += pow(take[sample], 2)
-        highlowenergies.append(highEnergy/lowEnergy)
-    return highlowenergies
+                even += pow(take.amplitudes[i], 2)
+        oers.append(odd/even)
+    return oers
+
+def CalculateRMS(signal):
+    return np.sum(librosa.feature.rmse(signal))
+
+#Calculates the signals temporal centroid. Only takes into account signal over threshold to disguard silence. Watch out when using signals of different lengths.
+def CalculateTemporalCentroid(impulse, windowLength = 2048, hopsize = 1024, threshold = 0.1):
+    envelope = iracema.features.peak_envelope(impulse, windowLength, hopsize)
+    maxEnv = max(envelope.data)
+    amplitudeSum = sum(envelope.data)
+    ampXTimeSum = 0
+
+    for i in range(0, len(envelope)):
+        if envelope.data[i] > (maxEnv * threshold):
+            ampXTimeSum += envelope.time[i] * envelope.data[i]
+    return (ampXTimeSum/amplitudeSum)
+
+# Calculate log of attack time of signal. The algorythm was simplified when it comes to finding the start time of attack due to the it giving better results for guitar
+def CalculateLogAttackTime(impulse, windowLength = 256, hopsize = 128, threshold = 0.3):
+    envelope = iracema.features.peak_envelope(impulse, windowLength, hopsize)
+    maxEnv = max(envelope.data)
+    startTime, stopTime = 0, 0
+
+    for i in range(0, len(envelope)):
+        if envelope.data[i] > (maxEnv * threshold):
+            startTime = envelope.time[i]
+            break
+    for i in range(0, len(envelope)):
+        if envelope.data[i] == maxEnv:
+            stopTime = envelope.time[i]
+            break
+
+    return math.log10(stopTime - startTime)
+
+def CalculateDecayTime(impulse, windowLength = 2048, hopsize = 1024, ratio = 0.12): # Calculates time between the peak of impulse and it decaying below the value of max*ratio
+    envelope = iracema.features.peak_envelope(impulse, windowLength, hopsize)
+    maxEnv = max(envelope.data)
+    peakTime = 0
+    decayTime = 0
+
+    for i in range(0,len(envelope.data)):
+        if envelope.data[i] == maxEnv:
+            peakTime = envelope.time[i]
+        if maxEnv * ratio > envelope.data[i]:
+            decayTime = envelope.time[i] - peakTime
+            break
+    return decayTime
