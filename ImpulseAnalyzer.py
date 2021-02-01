@@ -18,7 +18,10 @@ def CalculateStatistics(values, meanValues, deviations):
     deviations.append(np.std(values))
     return 0
 
-def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fileNameAppendix, attackTime, sustainTime, decayTime_flag):
+def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fileNameAppendix, attackTime, sustainTime, \
+    centroid_flag, f0normCentroid_flag, rolloff_flag, bandwidth_flag, spread_flag, highLowEnergy_flag, \
+    tristimulus_flag, inharmonicity_flag, noisiness_flag, oddeven_flag, tuning_flag, crossingRate_flag, \
+    rms_flag, entropy_flag, temporalCentroid_flag, logAttackTime_flag, decayTime_flag):
 
     if os.path.isdir(outputDirectory):
             shutil.rmtree(outputDirectory)
@@ -50,11 +53,6 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             allDecayFrequencies, seriesNames = [], [], [], [], [], [], []
     # Spectrum scaling factors
     impulseTime, maxAttack, maxSustain, maxDecay = 0, 0, 0, 0
-
-    # Flags used to decide which parameters will be calculated
-    centroid_flag, f0normCentroid_flag, rolloff_flag, bandwidth_flag, spread_flag, highLowEnergy_flag, tristimulus_flag, \
-    inharmonicity_flag, noisiness_flag, oddeven_flag, tuning_flag, crossingRate_flag, rms_flag, entropy_flag, \
-    temporalCentroid_flag, logAttackTime_flag = True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True
 
     # Calculating spectrums and parameters
     for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
