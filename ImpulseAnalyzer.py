@@ -23,12 +23,13 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     tristimulus_flag, inharmonicity_flag, noisiness_flag, oddeven_flag, tuning_flag, crossingRate_flag, \
     rms_flag, entropy_flag, temporalCentroid_flag, logAttackTime_flag, decayTime_flag):
 
+    # clear output folder
     if os.path.isdir(outputDirectory):
             shutil.rmtree(outputDirectory)
     os.mkdir(outputDirectory)
     samplingRate = 0
 
-    # These variables are used to save the parameter data
+    # ----------Setting up variables required for calculation and saving of parameter data---------------
     data_array = []
     series_names, centroid_values, centroid_deviations,  f0NormalizedCentroid_values, f0NormalizedCentroid_deviations, \
     rolloff_values, rolloff_deviations, bandwidth_values, bandwidth_deviation, spread_values, spread_deviations, \
@@ -54,7 +55,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     # Spectrum scaling factors
     impulseTime, maxAttack, maxSustain, maxDecay = 0, 0, 0, 0
 
-    # Calculating spectrums and parameters
+    # ---------------Calculating spectrums and parameters------------------
     for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
         seriesDirectory = inputDirectory + "/" + os.fsdecode(seriesDirectory)
         print("Entering folder: " + seriesDirectory)
@@ -129,6 +130,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         if oddeven_flag:
             oddEvenRatios = pc.CalculateOERs(harmonicData)
 
+        # Dividing spectrum data into segments
         avrAttackSpectrum = pc.CalculateAverageVector(attackSpectrums)
         avrSustainSpectrum = pc.CalculateAverageVector(sustainSpectrums)
         avrDecaySpectrum = pc.CalculateAverageVector(decaySpectrums)
@@ -168,7 +170,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         CalculateStatistics(logAttackTimes, logAttackTime_values, logAttackTime_deviations)
         CalculateStatistics(decayTimes, decayTime_values, decayTime_deviations)
 
-
+    # -----------------Saving results-------------------
     # Saving parameter data into .npy file
     data_array = series_names
     if centroid_flag:
@@ -210,7 +212,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
 
     np.save(outputDirectory + '/' + parameterFileName + '_' + fileNameAppendix + '.npy', data_array)
 
-    # saving data into .csv file
+    # Saving data into .csv file
     with open(outputDirectory + '/' + parameterFileName + '_' + fileNameAppendix + '.csv', 'w', newline='') as csvfile:
         dataWriter = csv.writer(csvfile, delimiter=',', quotechar=';', quoting=csv.QUOTE_MINIMAL)
         dataWriter.writerow(series_names)
@@ -294,7 +296,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
 
     print("Spectrums saved to: " + spectrumFileName + '_' + fileNameAppendix)
 
-    # Drawing spectrum plots
+    # --------------------Plotting spectrums----------------------
     for iterator in range(0, len(seriesNames)):
 
         #plt.suptitle(seriesNames[iterator].replace(inputDirectory, ''), fontsize='xx-large')
@@ -312,10 +314,6 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         plt.xlabel('f [kHz]', fontsize=30)
         plt.xticks(fontsize=21)
         plt.yticks(fontsize=23)
-
-        #Mierna próba zmiany wielkości notacji wykładniczej
-        #yaxis.get_offset_text().set_fontsize(24)
-
         plt.ticklabel_format(useMathText=True, scilimits=(0, 0))
         plt.ylabel('Amplitude', fontsize=35)
         plt.title('0 - ' + str(attackTime) + ' [s]', fontsize=25)

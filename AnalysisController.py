@@ -13,14 +13,6 @@ spectrumFileName = "SpectrumData"
 attackCutTime = 0.3
 sustainCutTime = 1.3
 
-# This variable decides whether the time intensive decay time calculations are conducted
-decayTime_flag= True
-
-# -----------------ParameterDisplayer Controls-------------------
-# Directories
-displayerInputDirectory = analyzerOutputDirectory
-displayerOutputDirectory = "DisplayerOutputFolder"
-
 # Flags used to decide which parameters will be calculated
 centroid_flag = True
 f0normCentroid_flag = True
@@ -38,6 +30,12 @@ rms_flag = True
 entropy_flag = True
 temporalCentroid_flag = True
 logAttackTime_flag = True
+decayTime_flag= True
+
+# -----------------ParameterDisplayer Controls-------------------
+# Directories
+displayerInputDirectory = analyzerOutputDirectory
+displayerOutputDirectory = "DisplayerOutputFolder"
 
 # -----------------Running sections-------------------
 for comparisonGroup in os.listdir(os.fsencode(analyzerInputDirectory)):
@@ -45,10 +43,10 @@ for comparisonGroup in os.listdir(os.fsencode(analyzerInputDirectory)):
     comparisonFolderName = analyzerInputDirectory + "/" + os.fsdecode(comparisonGroup)
     comparisonOutputDirectory = analyzerOutputDirectory + "/" + os.fsdecode(comparisonGroup)
 
-    ImpulseAnalyzer.run(comparisonFolderName, comparisonOutputDirectory, parameterFileName, spectrumFileName, \
-        os.fsdecode(comparisonGroup), attackCutTime, sustainCutTime, centroid_flag, f0normCentroid_flag, rolloff_flag, \
-        bandwidth_flag, spread_flag, highLowEnergy_flag, tristimulus_flag, inharmonicity_flag, noisiness_flag, \
-        oddeven_flag, tuning_flag, crossingRate_flag, rms_flag, entropy_flag, \
+    ImpulseAnalyzer.run(comparisonFolderName, comparisonOutputDirectory, parameterFileName, spectrumFileName,
+        os.fsdecode(comparisonGroup), attackCutTime, sustainCutTime, centroid_flag, f0normCentroid_flag, rolloff_flag,
+        bandwidth_flag, spread_flag, highLowEnergy_flag, tristimulus_flag, inharmonicity_flag, noisiness_flag,
+        oddeven_flag, tuning_flag, crossingRate_flag, rms_flag, entropy_flag,
         temporalCentroid_flag, logAttackTime_flag, decayTime_flag)
 
     ParameterDisplayer.run(comparisonOutputDirectory, comparisonOutputDirectory, os.fsdecode(comparisonGroup), parameterFileName)

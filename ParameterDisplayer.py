@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # This script accepts a data file saved by ImpulseAnalyzer.py, displays the data and saves the plot into the output directory.
+
 def run(inputDirectory, outputDirectory, fileNameAppendix, dataFileName):
 
         customFontsize = 17
@@ -40,7 +41,7 @@ def run(inputDirectory, outputDirectory, fileNameAppendix, dataFileName):
                         plt.ylabel('Rate', fontsize=customFontsize)
 
                 plt.errorbar(seriesNames, values, deviations, fmt='ko', ecolor='k', elinewidth=1.5, capsize=20)
-                #plt.title(parameterName)
+                plt.title(parameterName)
                 plt.subplots_adjust(bottom=0.2)
                 plt.grid(True)
                 plt.yticks(fontsize=12)

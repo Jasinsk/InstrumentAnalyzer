@@ -40,18 +40,21 @@ def CalculateFFTs(takes, samplingRate, attackTime, sustainTime): # Takes array o
 
     return fullSpectrums, fullFrequencies, attackFrequencies, attackSpectrums, sustainFrequencies, sustainSpectrums, decayFrequencies, decaySpectrums
 
+# Creates vector of mathematical harmonic frequencies based on the fundamental pitch
 def CreateMathematicalHarmonicFrequencyVector(pitch, n):
     freq = []
     for i in range (1, n):
         freq.append(pitch * i)
     return freq
 
+# Based on harmonic data from iracema estimates the fundamental pitch
 def EstimateFundamentalPitch(harmonicFrequencies):
     fundamentalPitches = []
     for i in range (0, len(harmonicFrequencies)):
         fundamentalPitches.append(harmonicFrequencies[i]/(i+1))
     return np.mean(fundamentalPitches)
 
+# Takes spectrum of impulse and the mathematical harmonic frequencies and returns the amplitudes and frequencies of harmonics in the signal
 def ExtractHarmonicDataFromSpectrums(spectrums, spectrumFrequencies, mathHarmonicFrequencies, bufforInHZ = 5):
     buffor = int(bufforInHZ/(spectrumFrequencies[1]-spectrumFrequencies[0]))
     harmonicData = []
@@ -148,7 +151,9 @@ def CalculateOERs(harmonicsData):
 def CalculateRMS(signal):
     return np.sum(librosa.feature.rmse(signal))
 
-#Calculates the signals temporal centroid. Only takes into account signal over threshold to disguard silence. Watch out when using signals of different lengths.
+#Calculates the signals temporal centroid. Only takes into account signal over threshold to disguard silence.
+# Watch out when using signals of different lengths.
+
 def CalculateTemporalCentroid(impulse, windowLength = 2048, hopsize = 1024, threshold = 0.1):
     envelope = iracema.features.peak_envelope(impulse, windowLength, hopsize)
     maxEnv = max(envelope.data)
@@ -177,7 +182,8 @@ def CalculateLogAttackTime(impulse, windowLength = 256, hopsize = 128, threshold
 
     return math.log10(stopTime - startTime)
 
-def CalculateDecayTime(impulse, windowLength = 2048, hopsize = 1024, ratio = 0.12): # Calculates time between the peak of impulse and it decaying below the value of max*ratio
+# Calculates time between the peak of impulse and it decaying below the value of max*ratio
+def CalculateDecayTime(impulse, windowLength = 2048, hopsize = 1024, ratio = 0.12):
     envelope = iracema.features.peak_envelope(impulse, windowLength, hopsize)
     maxEnv = max(envelope.data)
     peakTime = 0
