@@ -37,6 +37,10 @@ decayTime_flag= True
 displayerInputDirectory = analyzerOutputDirectory
 displayerOutputDirectory = "DisplayerOutputFolder"
 
+# -----------------Output Controls-------------------
+# Decide whether the output graphs showed be in vector format
+vectorOutput_flag = False
+
 # -----------------Running sections-------------------
 for comparisonGroup in os.listdir(os.fsencode(analyzerInputDirectory)):
 
@@ -47,6 +51,7 @@ for comparisonGroup in os.listdir(os.fsencode(analyzerInputDirectory)):
         os.fsdecode(comparisonGroup), attackCutTime, sustainCutTime, centroid_flag, f0normCentroid_flag, rolloff_flag,
         bandwidth_flag, spread_flag, highLowEnergy_flag, tristimulus_flag, inharmonicity_flag, noisiness_flag,
         oddeven_flag, tuning_flag, crossingRate_flag, rms_flag, entropy_flag,
-        temporalCentroid_flag, logAttackTime_flag, decayTime_flag)
+        temporalCentroid_flag, logAttackTime_flag, decayTime_flag, vectorOutput_flag)
 
-    ParameterDisplayer.run(comparisonOutputDirectory, comparisonOutputDirectory, os.fsdecode(comparisonGroup), parameterFileName)
+    ParameterDisplayer.run(comparisonOutputDirectory, comparisonOutputDirectory, os.fsdecode(comparisonGroup),
+                           parameterFileName, vectorOutput_flag)

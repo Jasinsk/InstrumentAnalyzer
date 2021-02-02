@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 # This script accepts a data file saved by ImpulseAnalyzer.py, displays the data and saves the plot into the output directory.
 
-def run(inputDirectory, outputDirectory, fileNameAppendix, dataFileName):
+def run(inputDirectory, outputDirectory, fileNameAppendix, dataFileName, vectorOutput_flag):
 
         customFontsize = 17
 
@@ -50,8 +50,11 @@ def run(inputDirectory, outputDirectory, fileNameAppendix, dataFileName):
                 outputFile = outputDirectory + '/' + parameterName + '_' + fileNameAppendix
                 figure = plt.gcf()
                 figure.set_size_inches(7, 3.5)
-                plt.savefig(outputFile, dpi=100)
-                #plt.savefig(outputFile, dpi=100, format="eps")
+
+                if vectorOutput_flag:
+                        plt.savefig(outputFile, dpi=100, format="eps")
+                else:
+                        plt.savefig(outputFile, dpi=100)
 
                 #plt.show()
                 plt.clf()

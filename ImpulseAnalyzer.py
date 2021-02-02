@@ -21,7 +21,7 @@ def CalculateStatistics(values, meanValues, deviations):
 def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fileNameAppendix, attackTime, sustainTime, \
     centroid_flag, f0normCentroid_flag, rolloff_flag, bandwidth_flag, spread_flag, highLowEnergy_flag, \
     tristimulus_flag, inharmonicity_flag, noisiness_flag, oddeven_flag, tuning_flag, crossingRate_flag, \
-    rms_flag, entropy_flag, temporalCentroid_flag, logAttackTime_flag, decayTime_flag):
+    rms_flag, entropy_flag, temporalCentroid_flag, logAttackTime_flag, decayTime_flag, vectorOutput_flag):
 
     # clear output folder
     if os.path.isdir(outputDirectory):
@@ -352,10 +352,11 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
 
         figure = plt.gcf()
         figure.set_size_inches(19, 8)
-        plt.savefig(outputFile, dpi = 100)
 
-        #This should be used if outputing to vector file
-        #plt.savefig(outputFile, dpi=100, format="eps")
+        if vectorOutput_flag:
+            plt.savefig(outputFile, dpi=100, format="eps")
+        else:
+            plt.savefig(outputFile, dpi = 100)
 
         #plt.show()
         plt.clf()
