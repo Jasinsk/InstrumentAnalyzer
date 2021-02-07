@@ -148,14 +148,14 @@ def CalculateOERs(harmonicsData):
         oers.append(odd/even)
     return oers
 
-def CalculateRMS(signal):
-    return np.sum(librosa.feature.rmse(signal))
+def CalculateRMS(args):
+    return np.sum(librosa.feature.rmse(args.impulseLIB))
 
 #Calculates the signals temporal centroid. Only takes into account signal over threshold to disguard silence.
 # Watch out when using signals of different lengths.
 
-def CalculateTemporalCentroid(impulse, windowLength = 2048, hopsize = 1024, threshold = 0.1):
-    envelope = iracema.features.peak_envelope(impulse, windowLength, hopsize)
+def CalculateTemporalCentroid(args, windowLength = 2048, hopsize = 1024, threshold = 0.1):
+    envelope = iracema.features.peak_envelope(args.impulseIRA, windowLength, hopsize)
     maxEnv = max(envelope.data)
     amplitudeSum = sum(envelope.data)
     ampXTimeSum = 0
@@ -166,8 +166,8 @@ def CalculateTemporalCentroid(impulse, windowLength = 2048, hopsize = 1024, thre
     return (ampXTimeSum/amplitudeSum)
 
 # Calculate log of attack time of signal. The algorythm was simplified when it comes to finding the start time of attack due to the it giving better results for guitar
-def CalculateLogAttackTime(impulse, windowLength = 256, hopsize = 128, threshold = 0.3):
-    envelope = iracema.features.peak_envelope(impulse, windowLength, hopsize)
+def CalculateLogAttackTime(args, windowLength = 256, hopsize = 128, threshold = 0.3):
+    envelope = iracema.features.peak_envelope(args.impulseIRA, windowLength, hopsize)
     maxEnv = max(envelope.data)
     startTime, stopTime = 0, 0
 
@@ -183,8 +183,8 @@ def CalculateLogAttackTime(impulse, windowLength = 256, hopsize = 128, threshold
     return math.log10(stopTime - startTime)
 
 # Calculates time between the peak of impulse and it decaying below the value of max*ratio
-def CalculateDecayTime(impulse, windowLength = 2048, hopsize = 1024, ratio = 0.12):
-    envelope = iracema.features.peak_envelope(impulse, windowLength, hopsize)
+def CalculateDecayTime(args, windowLength = 2048, hopsize = 1024, ratio = 0.12):
+    envelope = iracema.features.peak_envelope(args.impulseIRA, windowLength, hopsize)
     maxEnv = max(envelope.data)
     peakTime = 0
     decayTime = 0

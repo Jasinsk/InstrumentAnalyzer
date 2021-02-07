@@ -12,6 +12,8 @@ import ParameterCalculator as pc
 # This script accepts folders with individually parsed impulses and calculates an averaged spectrum for each directory.
 # The plots of these results are saved into the output directory.
 # Spectral and energy parameters are also calculated and saved into the output directory.
+class Arguments:
+    pass
 
 def CalculateStatistics(values, meanValues, deviations):
     meanValues.append(np.mean(values))
@@ -84,46 +86,48 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
 
         for impulseFile in os.listdir(os.fsencode(seriesDirectory)):
             impulseFileName = seriesDirectory + "/" + os.fsdecode(impulseFile)
+            args = Arguments()
+            args.fundumentalPitch = fundumentalPitch
             # librosa loading
             print("Loading file: " + impulseFileName)
-            impulse, samplingRate = librosa.load(impulseFileName)
+            args.impulseLIB, samplingRate = librosa.load(impulseFileName)
             # iracema loading
-            impulseIRA = iracema.Audio(impulseFileName)
-            impulseFFT = iracema.spectral.fft(impulseIRA, window_size=2048, hop_size=1024)
-            pitch = iracema.pitch.hps(impulseFFT, minf0=50, maxf0=500)
-            pitchesHz.append(np.median(pitch.data))
-            harmonics = iracema.harmonics.extract(impulseFFT, pitch)
+            args.impulseIRA = iracema.Audio(impulseFileName)
+            args.impulseFFT = iracema.spectral.fft(args.impulseIRA, window_size=2048, hop_size=1024)
+            args.pitch = iracema.pitch.hps(args.impulseFFT, minf0=50, maxf0=500)
+            args.harmonicsIRA = iracema.harmonics.extract(args.impulseFFT, args.pitch)
+            pitchesHz.append(np.median(args.pitch.data))
 
             if centroid_flag:
-                centroids.append(np.mean(librosa.feature.spectral_centroid(impulse)))
+                centroids.append(np.mean(librosa.feature.spectral_centroid(args.impulseLIB)))
             if f0normCentroid_flag:
                 if fundumentalPitch == 0:
-                    f0normCentroids.append((np.mean(librosa.feature.spectral_centroid(impulse) / np.median(pitch.data))))
+                    f0normCentroids.append((np.mean(librosa.feature.spectral_centroid(args.impulseLIB) / np.median(args.pitch.data))))
                 else:
-                    f0normCentroids.append((np.mean(librosa.feature.spectral_centroid(impulse) / fundumentalPitch)))
+                    f0normCentroids.append((np.mean(librosa.feature.spectral_centroid(args.impulseLIB) / fundumentalPitch)))
             if rolloff_flag:
-                rolloffs.append(np.mean(librosa.feature.spectral_rolloff(impulse)))
+                rolloffs.append(np.mean(librosa.feature.spectral_rolloff(args.impulseLIB)))
             if bandwidth_flag:
-                bandwidths.append(np.mean(librosa.feature.spectral_bandwidth(impulse)))
+                bandwidths.append(np.mean(librosa.feature.spectral_bandwidth(args.impulseLIB)))
             if spread_flag:
-                spreads.append(np.mean(iracema.features.spectral_spread(impulseFFT).data))
+                spreads.append(np.mean(iracema.features.spectral_spread(args.impulseFFT).data))
             if noisiness_flag:
-                noisinesses.append(np.mean(iracema.features.noisiness(impulseFFT, harmonics['magnitude']).data))
+                noisinesses.append(np.mean(iracema.features.noisiness(args.impulseFFT, args.harmonicsIRA['magnitude']).data))
             if tuning_flag:
-                tunings.append(np.mean(librosa.estimate_tuning(impulse)))
+                tunings.append(np.mean(librosa.estimate_tuning(args.impulseLIB)))
             if crossingRate_flag:
-                crossingRates.append(np.mean(librosa.feature.zero_crossing_rate(impulse)))
+                crossingRates.append(np.mean(librosa.feature.zero_crossing_rate(args.impulseLIB)))
             if rms_flag:
-                rmss.append(pc.CalculateRMS(impulse))
+                rmss.append(pc.CalculateRMS(args))
             if entropy_flag:
-                entropies.append(np.mean(iracema.features.spectral_entropy(impulseFFT).data))
+                entropies.append(np.mean(iracema.features.spectral_entropy(args.impulseFFT).data))
             if temporalCentroid_flag:
-                temporalCentroids.append(pc.CalculateTemporalCentroid(impulseIRA))
+                temporalCentroids.append(pc.CalculateTemporalCentroid(args))
             if logAttackTime_flag:
-                logAttackTimes.append(pc.CalculateLogAttackTime(impulseIRA))
+                logAttackTimes.append(pc.CalculateLogAttackTime(args))
             if decayTime_flag:
-                decayTimes.append(pc.CalculateDecayTime(impulseIRA))
-            impulses = pc.InsertIntoVstack(impulse, impulses)
+                decayTimes.append(pc.CalculateDecayTime(args))
+            impulses = pc.InsertIntoVstack(args.impulseLIB, impulses)
 
         fullSpectrums, fullFrequencies, attackFrequencies, attackSpectrums, sustainFrequencies, sustainSpectrums, \
         decayFrequencies, decaySpectrums = pc.CalculateFFTs(impulses, samplingRate, attackTime, sustainTime)
