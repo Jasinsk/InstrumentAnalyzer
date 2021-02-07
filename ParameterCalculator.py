@@ -83,17 +83,18 @@ def ExtractHarmonicDataFromSpectrums(spectrums, spectrumFrequencies, mathHarmoni
                     break
 
         # showing found harmonics and spectrum for debugging
-        if False:
-            print(harmonicFrequencies)
+        """
+        print(harmonicFrequencies)
 
-            x = []
-            for y in range(0, len(harmonicFrequencies)):
-                x.append(y)
-            plt.subplot(121)
-            plt.plot(spectrumFrequencies, spectrum)
-            plt.subplot(122)
-            plt.bar(x, amplitudes)
-            plt.show()
+        x = []
+        for y in range(0, len(harmonicFrequencies)):
+            x.append(y)
+        plt.subplot(121)
+        plt.plot(spectrumFrequencies, spectrum)
+        plt.subplot(122)
+        plt.bar(x, amplitudes)
+        plt.show()
+        """
 
         harmonicData.append(Harmonics(harmonicFrequencies, amplitudes))
     return harmonicData
