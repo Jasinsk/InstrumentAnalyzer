@@ -18,6 +18,19 @@ def CalculateStatistics(values, meanValues, deviations):
     deviations.append(np.std(values))
     return 0
 
+def DrawSpectrum(frequencies, spectrum, maxValue, startTime, endTime):
+    plt.plot(frequencies, spectrum, color='k')
+    plt.locator_params(nbins=4)
+    plt.xlim([0, 2])
+    plt.ylim([10e-12, maxValue * 1.1])
+    plt.xlabel('f [kHz]', fontsize=32)
+    plt.xticks(fontsize=21)
+    plt.ticklabel_format(useMathText=True, scilimits=(0, 0))
+    plt.yticks(fontsize=23)
+    plt.title(str(startTime) + ' - ' + str(endTime) + ' [s]', fontsize=25)
+    # plt.yscale("log")
+    # plt.text(1500, maxDecay, str('Energy = ' + str(CalculateRMS(allDecaySpectrums[iterator]))))
+
 def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fileNameAppendix, attackTime, sustainTime, \
     centroid_flag, f0normCentroid_flag, rolloff_flag, bandwidth_flag, spread_flag, highLowEnergy_flag, \
     tristimulus_flag, inharmonicity_flag, noisiness_flag, oddeven_flag, tuning_flag, crossingRate_flag, \
@@ -307,45 +320,11 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         kDecayFrequencies = allDecayFrequencies[iterator]/100
 
         plt.subplot(131)
-        plt.plot(kAttackFrequencies, allAttackSpectrums[iterator], color = 'k')
-        plt.locator_params(nbins=4)
-        plt.xlim([0, 2])
-        plt.ylim([10e-12, maxAttack * 1.1])
-        plt.xlabel('f [kHz]', fontsize=30)
-        plt.xticks(fontsize=21)
-        plt.yticks(fontsize=23)
-        plt.ticklabel_format(useMathText=True, scilimits=(0, 0))
-        plt.ylabel('Amplitude', fontsize=35)
-        plt.title('0 - ' + str(attackTime) + ' [s]', fontsize=25)
-        #plt.yscale("log")
-        #plt.text(1500, maxAttack, str('Energy = ' + str(CalculateRMS(allAttackSpectrums[iterator]))))
-
+        DrawSpectrum(kAttackFrequencies, allAttackSpectrums[iterator], maxAttack, '0', attackTime)
         plt.subplot(132)
-        plt.plot(kSustainFrequencies, allSustainSpectrums[iterator], color = 'k')
-        plt.locator_params(nbins=4)
-        plt.xlim([0, 2])
-        plt.ylim([10e-12, maxSustain * 1.1])
-        plt.xlabel('f [kHz]', fontsize=32)
-        plt.xticks(fontsize=21)
-        plt.ticklabel_format(useMathText=True, scilimits=(0, 0))
-        plt.yticks(fontsize=23)
-        plt.title(str(attackTime) + ' - ' + str(sustainTime) + ' [s]', fontsize=25)
-        #plt.yscale("log")
-        #plt.text(1500, maxSustain, str('Energy = ' + str(CalculateRMS(allSustainSpectrums[iterator]))))
-
+        DrawSpectrum(kSustainFrequencies, allSustainSpectrums[iterator], maxSustain, attackTime, sustainTime)
         plt.subplot(133)
-        plt.plot(kDecayFrequencies, allDecaySpectrums[iterator], color = 'k')
-        plt.locator_params(nbins=4)
-        plt.xlim([0, 2])
-        plt.ylim([10e-12, maxDecay * 1.1])
-        plt.xlabel('f [kHz]', fontsize=32)
-        plt.xticks(fontsize=21)
-        plt.ticklabel_format(useMathText=True, scilimits=(0, 0))
-        plt.yticks(fontsize=23)
-        plt.title(str(sustainTime) + ' - ' + str(round(impulseTime, 2)) + ' [s]', fontsize=25)
-        #plt.yscale("log")
-        #plt.text(1500, maxDecay, str('Energy = ' + str(CalculateRMS(allDecaySpectrums[iterator]))))
-
+        DrawSpectrum(kDecayFrequencies, allDecaySpectrums[iterator], maxDecay, sustainTime, round(impulseTime, 2))
 
         outputFile = seriesNames[iterator].replace(inputDirectory, outputDirectory)
         print("Outputing to: " + outputFile)
