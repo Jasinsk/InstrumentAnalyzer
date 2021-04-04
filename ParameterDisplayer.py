@@ -24,6 +24,11 @@ def run(inputDirectory, outputDirectory, fileNameAppendix, dataFileName, vectorO
                 plt.xlabel('Tonewood', fontsize=customFontsize)
                 # Labels for x values
                 plt.xticks([0, 1, 2, 3], ['Sapele', 'Pine', 'Plywood', 'Rosewood'], fontsize=15, rotation=0)
+                #plt.xticks([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+                #           ['wn', 'wn-100', 'wn-300', 'wn-1500', 'wn-1500-2oct', 'wn-1500-3oct', 'wn-6000', 'sine-440', 'sine-447',
+                #            'triangle-440', 'saw-440', 'sine-100,200,300,400', 'sine-100,210,320,390', 'a-2,d-8', 'a-0,5,d-9,5',
+                #            'a-1,d-9', 'a-1,d-1', 'guitar'], fontsize=9, rotation=90)
+
 
                 # assigning proper y axis labels to graphs
                 if (parameterName == "Spectrum Centroid" or parameterName == "Bandwidth" or parameterName == "Rolloff"):

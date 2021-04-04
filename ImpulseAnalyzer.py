@@ -23,8 +23,8 @@ def CalculateStatistics(values, meanValues, deviations):
 def DrawSpectrum(frequencies, spectrum, maxValue, startTime, endTime):
     plt.plot(frequencies, spectrum, color='k')
     plt.locator_params(nbins=4)
-    plt.xlim([0, 2])
-    plt.ylim([10e-12, maxValue * 1.1])
+    plt.xlim([0, 20000])
+    #plt.ylim([10e-12, maxValue * 1.1])
     plt.xlabel('f [kHz]', fontsize=32)
     plt.xticks(fontsize=21)
     plt.ticklabel_format(useMathText=True, scilimits=(0, 0))
@@ -91,6 +91,8 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             # librosa loading
             print("Loading file: " + impulseFileName)
             args.impulseLIB, samplingRate = librosa.load(impulseFileName)
+            samplingRate = 44100
+            #args.impulseLIB = librosa.to_mono(args.impulseLIB)
             # iracema loading
             args.impulseIRA = iracema.Audio(impulseFileName)
             args.impulseFFT = iracema.spectral.fft(args.impulseIRA, window_size=2048, hop_size=1024)
@@ -160,9 +162,9 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         allDecayFrequencies.append(decayFrequencies)
         seriesNames.append(seriesDirectory)
         impulseTime = len(impulses[0,:])/samplingRate
-        maxAttack = max([maxAttack, max(avrAttackSpectrum)])
-        maxSustain = max([maxSustain, max(avrSustainSpectrum)])
-        maxDecay = max([maxDecay, max(avrDecaySpectrum)])
+        #maxAttack = max([maxAttack, max(avrAttackSpectrum)])
+        #maxSustain = max([maxSustain, max(avrSustainSpectrum)])
+        #maxDecay = max([maxDecay, max(avrDecaySpectrum)])
 
         seriesName = seriesDirectory.replace(inputDirectory + "/", "")
         series_names.append(seriesName)
@@ -321,14 +323,14 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         #converting frequencies to kHz for easier legibility
         kAttackFrequencies = allAttackFrequencies[iterator]/1000
         kSustainFrequencies = allSustainFrequencies[iterator]/1000
-        kDecayFrequencies = allDecayFrequencies[iterator]/100
+        kDecayFrequencies = allDecayFrequencies[iterator]/1000
 
         plt.subplot(131)
-        DrawSpectrum(kAttackFrequencies, allAttackSpectrums[iterator], maxAttack, '0', attackTime)
+        DrawSpectrum(allAttackFrequencies[iterator], allAttackSpectrums[iterator], maxAttack, '0', attackTime)
         plt.subplot(132)
-        DrawSpectrum(kSustainFrequencies, allSustainSpectrums[iterator], maxSustain, attackTime, sustainTime)
+        DrawSpectrum(allSustainFrequencies[iterator], allSustainSpectrums[iterator], maxSustain, attackTime, sustainTime)
         plt.subplot(133)
-        DrawSpectrum(kDecayFrequencies, allDecaySpectrums[iterator], maxDecay, sustainTime, round(impulseTime, 2))
+        DrawSpectrum(allDecayFrequencies[iterator], allDecaySpectrums[iterator], maxDecay, sustainTime, round(impulseTime, 2))
 
         outputFile = seriesNames[iterator].replace(inputDirectory, outputDirectory)
         print("Outputing to: " + outputFile)

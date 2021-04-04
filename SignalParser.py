@@ -101,17 +101,17 @@ inputDirectory = "ParserInputFolder"
 outputDirectory = "ParserOutputFolder"
 
 # Peak detection
-threshold = 0.5
-minimalTimeDifference = 1
+threshold = 0.3
+minimalTimeDifference = 7
 
 # Impulse parsing
-attackTime = 0.05
-decayTime = 5
+attackTime = 0.1
+decayTime = 6
 
 # Energy validation of impulses
-acceptableEnergyDeviation = 0.3
+acceptableEnergyDeviation = 0.5
 attackEnergyTime = 1.5
-attackEnergyDeviation = 0.25
+attackEnergyDeviation = 0.4
 # ---------------------------------------------
 
 if os.path.isdir(outputDirectory):
@@ -152,4 +152,4 @@ for seriesSignal in os.listdir(os.fsencode(inputDirectory)):
     plt.title(seriesDirectory)
 
     # Uncomment to see what the parser is grabing.
-    #plt.show()
+    plt.show()

@@ -180,8 +180,10 @@ def CalculateLogAttackTime(args, windowLength = 256, hopsize = 128, threshold = 
         if envelope.data[i] == maxEnv:
             stopTime = envelope.time[i]
             break
-
-    return math.log10(stopTime - startTime)
+    if stopTime != startTime:
+        return math.log10(stopTime - startTime)
+    else:
+        return 0
 
 # Calculates time between the peak of impulse and it decaying below the value of max*ratio
 def CalculateDecayTime(args, windowLength = 2048, hopsize = 1024, ratio = 0.12):
