@@ -105,9 +105,9 @@ def CalculateHighEnergyLowEnergyRatio(spectrums, frequencies, boundaryFrequency 
         highEnergy, lowEnergy = 0, 0
         for sample in range(0, len(take)):
             if frequencies[sample] < boundaryFrequency:
-                highEnergy += pow(take[sample], 2)
-            else:
                 lowEnergy += pow(take[sample], 2)
+            else:
+                highEnergy += pow(take[sample], 2)
         highlowenergies.append(highEnergy/lowEnergy)
     return highlowenergies
 
@@ -167,7 +167,7 @@ def CalculateTemporalCentroid(args, windowLength = 2048, hopsize = 1024, thresho
     return (ampXTimeSum/amplitudeSum)
 
 # Calculate log of attack time of signal. The algorythm was simplified when it comes to finding the start time of attack due to the it giving better results for guitar
-def CalculateLogAttackTime(args, windowLength = 256, hopsize = 128, threshold = 0.3):
+def CalculateLogAttackTime(args, windowLength = 256, hopsize = 128, threshold = 0.15):
     envelope = iracema.features.peak_envelope(args.impulseIRA, windowLength, hopsize)
     maxEnv = max(envelope.data)
     startTime, stopTime = 0, 0
@@ -186,16 +186,23 @@ def CalculateLogAttackTime(args, windowLength = 256, hopsize = 128, threshold = 
         return 0
 
 # Calculates time between the peak of impulse and it decaying below the value of max*ratio
-def CalculateDecayTime(args, windowLength = 2048, hopsize = 1024, ratio = 0.12):
+def CalculateDecayTime(args, windowLength = 2048, hopsize = 1024, ratio = 0.1):
     envelope = iracema.features.peak_envelope(args.impulseIRA, windowLength, hopsize)
     maxEnv = max(envelope.data)
+
+    plt.plot(envelope.data)
+    #plt.show()
+
     peakTime = 0
     decayTime = 0
+    flag = False
 
     for i in range(0,len(envelope.data)):
         if envelope.data[i] == maxEnv:
             peakTime = envelope.time[i]
-        if maxEnv * ratio > envelope.data[i]:
+            flag = True
+
+        if (maxEnv * ratio > envelope.data[i]) & flag:
             decayTime = envelope.time[i] - peakTime
             break
     return decayTime
