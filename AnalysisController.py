@@ -41,17 +41,22 @@ displayerOutputDirectory = "DisplayerOutputFolder"
 # Decide whether the output graphs showed be in vector format
 vectorOutput_flag = False
 
+# Decide which sections should be run
+analyses_flag = False
+displayer_flag = True
 # -----------------Running sections-------------------
 for comparisonGroup in os.listdir(os.fsencode(analyzerInputDirectory)):
 
     comparisonFolderName = analyzerInputDirectory + "/" + os.fsdecode(comparisonGroup)
     comparisonOutputDirectory = analyzerOutputDirectory + "/" + os.fsdecode(comparisonGroup)
 
-    ImpulseAnalyzer.run(comparisonFolderName, comparisonOutputDirectory, parameterFileName, spectrumFileName,
-        os.fsdecode(comparisonGroup), attackCutTime, sustainCutTime, centroid_flag, f0normCentroid_flag, rolloff_flag,
-        bandwidth_flag, spread_flag, highLowEnergy_flag, tristimulus_flag, inharmonicity_flag, noisiness_flag,
-        oddeven_flag, tuning_flag, crossingRate_flag, rms_flag, entropy_flag,
-        temporalCentroid_flag, logAttackTime_flag, decayTime_flag, vectorOutput_flag)
+    if analyses_flag:
+        ImpulseAnalyzer.run(comparisonFolderName, comparisonOutputDirectory, parameterFileName, spectrumFileName,
+            os.fsdecode(comparisonGroup), attackCutTime, sustainCutTime, centroid_flag, f0normCentroid_flag, rolloff_flag,
+            bandwidth_flag, spread_flag, highLowEnergy_flag, tristimulus_flag, inharmonicity_flag, noisiness_flag,
+            oddeven_flag, tuning_flag, crossingRate_flag, rms_flag, entropy_flag,
+            temporalCentroid_flag, logAttackTime_flag, decayTime_flag, vectorOutput_flag)
 
-    ParameterDisplayer.run(comparisonOutputDirectory, comparisonOutputDirectory, os.fsdecode(comparisonGroup),
-                           parameterFileName, vectorOutput_flag)
+    if displayer_flag:
+        ParameterDisplayer.run(comparisonOutputDirectory, comparisonOutputDirectory, os.fsdecode(comparisonGroup),
+                               parameterFileName, vectorOutput_flag)
