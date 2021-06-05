@@ -82,7 +82,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         # If harmonic data and normalized centroids make no sense it may be caused by improper fundumental pitch detection.
         # Check in parameterData.csv whether the fundumentals were properly found.
         # If not, then manually add the correct pitch below and rerun the offending sounds.
-        fundumentalPitch = 0
+        fundumentalPitch = 261.63
 
         for impulseFile in os.listdir(os.fsencode(seriesDirectory)):
             impulseFileName = seriesDirectory + "/" + os.fsdecode(impulseFile)
@@ -113,8 +113,6 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
                 bandwidths.append(np.mean(librosa.feature.spectral_bandwidth(args.impulseLIB)))
             if spread_flag:
                 spreads.append(np.mean(iracema.features.spectral_spread(args.impulseFFT).data))
-            if noisiness_flag:
-                noisinesses.append(np.mean(iracema.features.noisiness(args.impulseFFT, args.harmonicsIRA['magnitude']).data))
             if tuning_flag:
                 tunings.append(np.mean(librosa.estimate_tuning(args.impulseLIB)))
             if crossingRate_flag:
@@ -131,15 +129,17 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
                 decayTimes.append(pc.CalculateDecayTime(args))
             impulses = pc.InsertIntoVstack(args.impulseLIB, impulses)
 
-        fullSpectrums, fullFrequencies, attackFrequencies, attackSpectrums, sustainFrequencies, sustainSpectrums, \
+        fullFrequencies, fullSpectrums, attackFrequencies, attackSpectrums, sustainFrequencies, sustainSpectrums, \
         decayFrequencies, decaySpectrums = pc.CalculateFFTs(impulses, samplingRate, attackTime, sustainTime)
 
         if fundumentalPitch == 0:
             fundumentalPitch = np.median(pitchesHz)
         foundFundumentalPitches.append(fundumentalPitch)
-        mathHarmFreq = pc.CreateMathematicalHarmonicFrequencyVector(fundumentalPitch, n=15)
+        mathHarmFreq = pc.CreateMathematicalHarmonicFrequencyVector(fundumentalPitch, n=20)
         harmonicData = pc.ExtractHarmonicDataFromSpectrums(fullSpectrums, fullFrequencies, mathHarmFreq, bufforInHZ=20)
 
+        if noisiness_flag:
+            noisinesses = pc.CalculateNoisiness(fullSpectrums, fullFrequencies, harmonicData)
         if highLowEnergy_flag:
             highLowEnergies = pc.CalculateHighEnergyLowEnergyRatio(fullSpectrums, fullFrequencies)
         if tristimulus_flag:
