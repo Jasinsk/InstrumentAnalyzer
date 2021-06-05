@@ -25,6 +25,8 @@ def CalculateAverageVector(Vectors): # Takes a vector of vectors and calculates 
     return averageVector
 
 def CalculateFFTs(takes, samplingRate, attackTime, sustainTime): # Takes array of impulses and creates array of spectrums
+    #No idea why thid is needed but it seems to be needed. If harmonics don't work correctly start here!
+    samplingRate = samplingRate/2
     attackSpectrums, sustainSpectrums, decaySpectrums, fullSpectrums = [], [], [], []
     attackFrequencies, sustainFrequencies, decayFrequencies, fullFrequencies = 0, 0, 0, 0
     for take in takes:
@@ -38,7 +40,7 @@ def CalculateFFTs(takes, samplingRate, attackTime, sustainTime): # Takes array o
         sustainSpectrums = InsertIntoVstack(sustainSpectrum.real, sustainSpectrums)
         decaySpectrums = InsertIntoVstack(decaySpectrum.real, decaySpectrums)
 
-    return fullSpectrums, fullFrequencies, attackFrequencies, attackSpectrums, sustainFrequencies, sustainSpectrums, decayFrequencies, decaySpectrums
+    return fullFrequencies, fullSpectrums, attackFrequencies, attackSpectrums, sustainFrequencies, sustainSpectrums, decayFrequencies, decaySpectrums
 
 # Creates vector of mathematical harmonic frequencies based on the fundamental pitch
 def CreateMathematicalHarmonicFrequencyVector(pitch, n):
@@ -60,17 +62,14 @@ def ExtractHarmonicDataFromSpectrums(spectrums, spectrumFrequencies, mathHarmoni
     harmonicData = []
 
     for spectrum in spectrums:
-        amplitudes = []
-        harmonicFrequencies = []
-        harmonicNumber = 0
+        amplitudes, harmonicFrequencies, harmonicNumber = [], [], 0
 
         for fftSample in range (0, len(spectrum)):
             if spectrumFrequencies[fftSample] > mathHarmonicFrequencies[harmonicNumber]:
-                peakValue = 0
-                peakFrequency = 0
+                peakValue, peakFrequency = 0, 0
 
                 for i in range (fftSample-buffor, fftSample+buffor):
-                    if spectrum[i] > peakValue:
+                    if spectrum[i] >= peakValue:
                         peakValue = spectrum[i]
                         peakFrequency = spectrumFrequencies[i]
 
@@ -83,7 +82,8 @@ def ExtractHarmonicDataFromSpectrums(spectrums, spectrumFrequencies, mathHarmoni
                     break
 
         # showing found harmonics and spectrum for debugging
-        """
+        '''
+        print(amplitudes)
         print(harmonicFrequencies)
 
         x = []
@@ -91,13 +91,30 @@ def ExtractHarmonicDataFromSpectrums(spectrums, spectrumFrequencies, mathHarmoni
             x.append(y)
         plt.subplot(121)
         plt.plot(spectrumFrequencies, spectrum)
+        plt.xlim([0,10000])
         plt.subplot(122)
         plt.bar(x, amplitudes)
+        plt.xlim([0, 30])
         plt.show()
-        """
+        '''
 
         harmonicData.append(Harmonics(harmonicFrequencies, amplitudes))
     return harmonicData
+
+def CalculateNoisiness(spectrums, frequencies, harmonicsData, harmonicWidth = 0.5):
+    noisinesses = []
+    for takeNumber in range (0, len(spectrums)): #Dla każdego dźwięku
+        fullEnergy, harmonicEnergy = 0, 0
+
+        for sample in spectrums[takeNumber]:
+            fullEnergy += pow(sample, 2)
+        for harmonicFrequency in harmonicsData[takeNumber].frequencies:
+            for frequency in range (0, len(frequencies)):
+                if frequencies[frequency] >= harmonicFrequency-harmonicWidth and frequencies[frequency] <= harmonicFrequency+harmonicWidth:
+                    harmonicEnergy += pow(spectrums[takeNumber][frequency], 2)
+
+        noisinesses.append((fullEnergy-harmonicEnergy)/fullEnergy)
+    return noisinesses
 
 def CalculateHighEnergyLowEnergyRatio(spectrums, frequencies, boundaryFrequency = 1500):
     highlowenergies = []
@@ -129,12 +146,11 @@ def CalculateInharmonicity(harmonicsData):
     inharmonicities = []
     for take in harmonicsData:
         fundumentalPitch = EstimateFundamentalPitch(take.frequencies)
-        topInharmonicity = 0
-        allAmplitudes = 0
+        Inharmonicity, allAmplitudes = 0, 0
         for i in range(0,len(take.frequencies)):
-            topInharmonicity += (abs(take.frequencies[i]-fundumentalPitch*(i+1))*pow(take.amplitudes[i], 2))
+            Inharmonicity += (abs(take.frequencies[i]-fundumentalPitch*(i+1))*pow(take.amplitudes[i], 2))
             allAmplitudes += pow(take.amplitudes[i], 2)
-        inharmonicities.append((2*topInharmonicity)/(fundumentalPitch*allAmplitudes))
+        inharmonicities.append((2*Inharmonicity)/(fundumentalPitch*allAmplitudes))
     return inharmonicities
 
 def CalculateOERs(harmonicsData):
