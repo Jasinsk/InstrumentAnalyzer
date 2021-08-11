@@ -20,19 +20,6 @@ def CalculateStatistics(values, meanValues, deviations):
     deviations.append(np.std(values))
     return 0
 
-def DrawSpectrum(frequencies, spectrum, maxValue, startTime, endTime):
-    plt.plot(frequencies, spectrum, color='k')
-    plt.locator_params(nbins=4)
-    plt.xlim([0, 20000])
-    #plt.ylim([10e-12, maxValue * 1.1])
-    plt.xlabel('f [kHz]', fontsize=32)
-    plt.xticks(fontsize=21)
-    plt.ticklabel_format(useMathText=True, scilimits=(0, 0))
-    plt.yticks(fontsize=23)
-    plt.title(str(startTime) + ' - ' + str(endTime) + ' [s]', fontsize=25)
-    # plt.yscale("log")
-    # plt.text(1500, maxDecay, str('Energy = ' + str(CalculateRMS(allDecaySpectrums[iterator]))))
-
 def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fileNameAppendix, attackTime, sustainTime, \
     centroid_flag, f0normCentroid_flag, rolloff_flag, bandwidth_flag, spread_flag, highLowEnergy_flag, \
     tristimulus_flag, inharmonicity_flag, noisiness_flag, oddeven_flag, tuning_flag, crossingRate_flag, \
@@ -82,7 +69,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         # If harmonic data and normalized centroids make no sense it may be caused by improper fundumental pitch detection.
         # Check in parameterData.csv whether the fundumentals were properly found.
         # If not, then manually add the correct pitch below and rerun the offending sounds.
-        fundumentalPitch = 261.63
+        fundumentalPitch = 0 #523.26 #261.63
 
         for impulseFile in os.listdir(os.fsencode(seriesDirectory)):
             impulseFileName = seriesDirectory + "/" + os.fsdecode(impulseFile)
@@ -91,7 +78,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             # librosa loading
             print("Loading file: " + impulseFileName)
             args.impulseLIB, samplingRate = librosa.load(impulseFileName)
-            samplingRate = 44100
+            #samplingRate = 44100
             #args.impulseLIB = librosa.to_mono(args.impulseLIB)
             # iracema loading
             args.impulseIRA = iracema.Audio(impulseFileName)
@@ -315,36 +302,20 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
 
     print("Spectrums saved to: " + spectrumFileName + '_' + fileNameAppendix)
 
-    # --------------------Plotting spectrums----------------------
+    spectrum_array, temp_array = [], []
     for iterator in range(0, len(seriesNames)):
-
-        #plt.suptitle(seriesNames[iterator].replace(inputDirectory, ''), fontsize='xx-large')
-
-        #converting frequencies to kHz for easier legibility
-        kAttackFrequencies = allAttackFrequencies[iterator]/1000
-        kSustainFrequencies = allSustainFrequencies[iterator]/1000
-        kDecayFrequencies = allDecayFrequencies[iterator]/1000
-
-        plt.subplot(131)
-        DrawSpectrum(allAttackFrequencies[iterator], allAttackSpectrums[iterator], maxAttack, '0', attackTime)
-        plt.subplot(132)
-        DrawSpectrum(allSustainFrequencies[iterator], allSustainSpectrums[iterator], maxSustain, attackTime, sustainTime)
-        plt.subplot(133)
-        DrawSpectrum(allDecayFrequencies[iterator], allDecaySpectrums[iterator], maxDecay, sustainTime, round(impulseTime, 2))
-
         outputFile = seriesNames[iterator].replace(inputDirectory, outputDirectory)
-        print("Outputing to: " + outputFile)
+        temp_array = [outputFile, allAttackSpectrums[iterator], \
+                                    allAttackFrequencies[iterator], allSustainSpectrums[iterator], \
+                                    allSustainFrequencies[iterator], allDecaySpectrums[iterator], \
+                                    allDecayFrequencies[iterator]]
 
-        figure = plt.gcf()
-        figure.set_size_inches(19, 8)
+        spectrum_array.append(temp_array)
 
-        if vectorOutput_flag:
-            plt.savefig(outputFile, dpi=100, format="eps")
-        else:
-            plt.savefig(outputFile, dpi = 100)
 
-        #plt.show()
-        plt.clf()
+    np.save(outputDirectory + '/' + spectrumFileName + '_' + fileNameAppendix + '.npy', spectrum_array)
+    print(spectrum_array)
+
 
 
 

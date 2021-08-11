@@ -1,6 +1,7 @@
 import numpy as np
 import math
 from scipy import signal
+import scipy
 import matplotlib.pyplot as plt
 import librosa
 import iracema
@@ -26,19 +27,37 @@ def CalculateAverageVector(Vectors): # Takes a vector of vectors and calculates 
 
 def CalculateFFTs(takes, samplingRate, attackTime, sustainTime): # Takes array of impulses and creates array of spectrums
     #No idea why thid is needed but it seems to be needed. If harmonics don't work correctly start here!
-    samplingRate = samplingRate/2
+    #samplingRate = samplingRate/2
     attackSpectrums, sustainSpectrums, decaySpectrums, fullSpectrums = [], [], [], []
     attackFrequencies, sustainFrequencies, decayFrequencies, fullFrequencies = 0, 0, 0, 0
-    for take in takes:
-        fullFrequencies, fullSpectrum = signal.periodogram(take, samplingRate, scaling="spectrum")
-        attackFrequencies, attackSpectrum = signal.periodogram(take[:int(attackTime*samplingRate)], samplingRate, scaling="spectrum")
-        sustainFrequencies, sustainSpectrum = signal.periodogram(take[int(attackTime*samplingRate):int(sustainTime*samplingRate)], samplingRate, scaling="spectrum")
-        decayFrequencies, decaySpectrum = signal.periodogram(take[int(sustainTime*samplingRate):], samplingRate, scaling="spectrum")
 
-        fullSpectrums = InsertIntoVstack(fullSpectrum.real, fullSpectrums)
-        attackSpectrums = InsertIntoVstack(attackSpectrum.real, attackSpectrums)
-        sustainSpectrums = InsertIntoVstack(sustainSpectrum.real, sustainSpectrums)
-        decaySpectrums = InsertIntoVstack(decaySpectrum.real, decaySpectrums)
+    full, attack, sustain, decay = 48.87, 35.19, 40.42, 47.98
+
+    for take in takes:
+        print(take)
+        fullSpectrum = scipy.fft.fft(take, norm='ortho')
+        fullFrequencies = scipy.fft.fftfreq(len(take), 1/samplingRate)
+        attackSpectrum = scipy.fft.fft(take[:int(attackTime*samplingRate)], norm='ortho')
+        attackFrequencies = scipy.fft.fftfreq(len(take[:int(attackTime*samplingRate)]), 1/samplingRate)
+        sustainSpectrum = scipy.fft.fft(take[int(attackTime*samplingRate):int(sustainTime*samplingRate)], norm='ortho')
+        sustainFrequencies = scipy.fft.fftfreq(len(take[int(attackTime*samplingRate):int(sustainTime*samplingRate)]), 1/samplingRate)
+        decaySpectrum = scipy.fft.fft(take[int(sustainTime*samplingRate):], norm='ortho')
+        decayFrequencies = scipy.fft.fftfreq(len(take[int(sustainTime*samplingRate):]), 1/samplingRate)
+
+        #fullSpectrum = fullSpectrum/7
+        #attackSpectrum = attackSpectrum/attackTime
+        #sustainSpectrum = sustainSpectrum/(sustainTime - attackTime)
+        #decaySpectrum = decaySpectrum/(7 - sustainTime)
+
+        fullSpectrum = 10 * np.log10(abs(fullSpectrum)) - full
+        attackSpectrum = 10 * np.log10(abs(attackSpectrum)) - attack
+        sustainSpectrum = 10 * np.log10(abs(sustainSpectrum)) - sustain
+        decaySpectrum = 10 * np.log10(abs(decaySpectrum)) - decay
+
+        fullSpectrums = InsertIntoVstack(fullSpectrum, fullSpectrums)
+        attackSpectrums = InsertIntoVstack(attackSpectrum, attackSpectrums)
+        sustainSpectrums = InsertIntoVstack(sustainSpectrum, sustainSpectrums)
+        decaySpectrums = InsertIntoVstack(decaySpectrum, decaySpectrums)
 
     return fullFrequencies, fullSpectrums, attackFrequencies, attackSpectrums, sustainFrequencies, sustainSpectrums, decayFrequencies, decaySpectrums
 
@@ -138,7 +157,7 @@ def CalculateTristimulus(harmonicsData):
             if i >= 5:
                 fiveUpAmplitudes += take.amplitudes[i]
         tristimulus1s.append(take.amplitudes[0]/allAmplitudes)
-        tristimulus2s.append((take.amplitudes[1] + take.amplitudes[2] + take.amplitudes[3])/allAmplitudes)
+        tristimulus2s.append((take.amplitudes[1]+take.amplitudes[2]+take.amplitudes[3])/allAmplitudes)
         tristimulus3s.append(fiveUpAmplitudes/allAmplitudes)
     return tristimulus1s, tristimulus2s, tristimulus3s
 

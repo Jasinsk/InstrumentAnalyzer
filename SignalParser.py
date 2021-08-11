@@ -37,7 +37,7 @@ def FindPeaks(signal, samplingRate, thresholdPercentage = 0.7, threshold = -1, r
 def RemoveDuplicatePeaks(peaks, samplingRate, minimalTimeDifference = 1, impulseDecayTime = 0, signalLength = 0):
     for i in range(0, len(peaks)-1):
         if peaks[i] + samplingRate * minimalTimeDifference > peaks[i+1]:
-            peaks[i+1] = 0
+            peaks[i] = 0
             print('Duplicate peaks detected!')
     if signalLength != 0 and peaks[-1] + impulseDecayTime * samplingRate > signalLength:
         peaks[-1] = 0
@@ -101,17 +101,18 @@ inputDirectory = "ParserInputFolder"
 outputDirectory = "ParserOutputFolder"
 
 # Peak detection
-threshold = 0.3
+#threshold = 1
+thresholdPercentage = 0.1
 minimalTimeDifference = 7
 
 # Impulse parsing
 attackTime = 0.1
-decayTime = 6
+decayTime = 8
 
 # Energy validation of impulses
-acceptableEnergyDeviation = 0.5
-attackEnergyTime = 1.5
-attackEnergyDeviation = 0.4
+acceptableEnergyDeviation = 0.25
+attackEnergyTime = 2
+attackEnergyDeviation = 0.1
 # ---------------------------------------------
 
 if os.path.isdir(outputDirectory):
@@ -124,7 +125,7 @@ for seriesSignal in os.listdir(os.fsencode(inputDirectory)):
 
     signal, samplingRate = lbr.load(inputSignal)
 
-    foundPeaks = FindPeaks(signal, samplingRate, threshold)
+    foundPeaks = FindPeaks(signal, samplingRate, thresholdPercentage=thresholdPercentage)
     foundPeaks = RemoveDuplicatePeaks(foundPeaks, samplingRate, minimalTimeDifference, decayTime, len(signal))
     foundImpulses = ParseImpulses(signal, samplingRate, foundPeaks, attackTime, decayTime)
     validatedImpulses, validatedPeaks = RemoveImpulsesWithEnergyDeviation(foundImpulses, samplingRate, acceptableEnergyDeviation, foundPeaks, attackEnergyTime, attackEnergyDeviation)

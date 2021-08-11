@@ -1,5 +1,6 @@
 import ImpulseAnalyzer
 import ParameterDisplayer
+import SpectrumDisplayer
 import os
 
 # -----------------ImpulseAnalyzer Controls-------------------
@@ -43,7 +44,8 @@ vectorOutput_flag = False
 
 # Decide which sections should be run
 analyses_flag = False
-displayer_flag = True
+parameter_displayer_flag = False
+spectrum_displater_flag = True
 # -----------------Running sections-------------------
 for comparisonGroup in os.listdir(os.fsencode(analyzerInputDirectory)):
 
@@ -57,6 +59,10 @@ for comparisonGroup in os.listdir(os.fsencode(analyzerInputDirectory)):
             oddeven_flag, tuning_flag, crossingRate_flag, rms_flag, entropy_flag,
             temporalCentroid_flag, logAttackTime_flag, decayTime_flag, vectorOutput_flag)
 
-    if displayer_flag:
+    if parameter_displayer_flag:
         ParameterDisplayer.run(comparisonOutputDirectory, comparisonOutputDirectory, os.fsdecode(comparisonGroup),
                                parameterFileName, vectorOutput_flag)
+
+    if spectrum_displater_flag:
+        SpectrumDisplayer.run(comparisonOutputDirectory, comparisonOutputDirectory, os.fsdecode(comparisonGroup),
+                               spectrumFileName, attackCutTime, sustainCutTime, vectorOutput_flag)
