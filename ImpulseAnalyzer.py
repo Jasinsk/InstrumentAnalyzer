@@ -77,7 +77,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             args.fundumentalPitch = fundumentalPitch
             # librosa loading
             print("Loading file: " + impulseFileName)
-            args.impulseLIB, samplingRate = librosa.load(impulseFileName)
+            args.impulseLIB, samplingRate = librosa.load(impulseFileName, sr=None)
             #samplingRate = 44100
             #args.impulseLIB = librosa.to_mono(args.impulseLIB)
             # iracema loading
