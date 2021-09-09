@@ -5,6 +5,7 @@ import scipy
 import matplotlib.pyplot as plt
 import librosa
 import iracema
+import OctaveBandFilter as obf
 
 # This file implements all function and calculations that are needed in the process of analysing impulses
 
@@ -34,7 +35,6 @@ def CalculateFFTs(takes, samplingRate, attackTime, sustainTime): # Takes array o
     full, attack, sustain, decay = 48.87, 35.19, 40.42, 47.98
 
     for take in takes:
-        print(take)
         fullSpectrum = scipy.fft.fft(take, norm='ortho')
         fullFrequencies = scipy.fft.fftfreq(len(take), 1/samplingRate)
         attackSpectrum = scipy.fft.fft(take[:int(attackTime*samplingRate)], norm='ortho')
@@ -241,3 +241,37 @@ def CalculateDecayTime(args, windowLength = 2048, hopsize = 1024, ratio = 0.1):
             decayTime = envelope.time[i] - peakTime
             break
     return decayTime
+
+# Calculating Euclidean Distance between adjacent points of signal. Used in sub-band flux calculation
+def CalculateEuclideanDistance(signal):
+    distance = 0
+    for i in range (1, len(signal)):
+        distance += pow(signal[i] - signal[i-1], 2)
+
+    return math.sqrt(distance)
+
+# Calculates sub-band spectral flux as defined in "Exploring perceptual and acoustical correlates of polyphonic timbre"
+def CalculateSubBandSpectralFlux(args, samplingRate):
+    # Filter into 10 sub-band octave filters
+    print(samplingRate)
+    if samplingRate < 22500: #You can't filter over the nyquist frequency
+        freqLimit = 4000
+        print("Sampling Rate too low for 10 octave bands, fs < 22450")
+    elif samplingRate < 45000:
+        freqLimit = 8000
+        print("Sampling Rate too low for 10 octave bands, fs < 45000")
+    else:
+        freqLimit = 16000
+
+    filterFreqs = obf.getFrequencies(30, freqLimit, 1)
+    filters = obf.designFilters(filterFreqs, samplingRate)
+    filteredSignal = obf.filterData(filters, args.impulseIRA.data)
+
+    # Calculate spectral flux for each of the bands
+    subBandFlux = []
+    filteredAudio = args.impulseIRA # iracema feature extraction works on it's own class so we have to put the filtered audio into it
+    for i in range (0, len(filteredSignal[0,:])):
+        filteredAudio.data = filteredSignal[:,i]
+        subBandFlux.append(CalculateEuclideanDistance(iracema.features.spectral_flux(filteredAudio).data))
+
+    return subBandFlux

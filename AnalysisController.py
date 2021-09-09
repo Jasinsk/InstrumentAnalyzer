@@ -21,6 +21,7 @@ rolloff_flag = True
 bandwidth_flag = True
 spread_flag = True
 highLowEnergy_flag = True
+subBandFlux_flag = True
 tristimulus_flag = True
 inharmonicity_flag = True
 noisiness_flag = True
@@ -44,8 +45,8 @@ vectorOutput_flag = False
 
 # Decide which sections should be run
 analyses_flag = False
-parameter_displayer_flag = False
-spectrum_displater_flag = True
+parameter_displayer_flag = True
+spectrum_displayer_flag = False
 # -----------------Running sections-------------------
 for comparisonGroup in os.listdir(os.fsencode(analyzerInputDirectory)):
 
@@ -55,14 +56,14 @@ for comparisonGroup in os.listdir(os.fsencode(analyzerInputDirectory)):
     if analyses_flag:
         ImpulseAnalyzer.run(comparisonFolderName, comparisonOutputDirectory, parameterFileName, spectrumFileName,
             os.fsdecode(comparisonGroup), attackCutTime, sustainCutTime, centroid_flag, f0normCentroid_flag, rolloff_flag,
-            bandwidth_flag, spread_flag, highLowEnergy_flag, tristimulus_flag, inharmonicity_flag, noisiness_flag,
-            oddeven_flag, tuning_flag, crossingRate_flag, rms_flag, entropy_flag,
+            bandwidth_flag, spread_flag, highLowEnergy_flag, subBandFlux_flag, tristimulus_flag, inharmonicity_flag,
+            noisiness_flag, oddeven_flag, tuning_flag, crossingRate_flag, rms_flag, entropy_flag,
             temporalCentroid_flag, logAttackTime_flag, decayTime_flag, vectorOutput_flag)
 
     if parameter_displayer_flag:
         ParameterDisplayer.run(comparisonOutputDirectory, comparisonOutputDirectory, os.fsdecode(comparisonGroup),
                                parameterFileName, vectorOutput_flag)
 
-    if spectrum_displater_flag:
+    if spectrum_displayer_flag:
         SpectrumDisplayer.run(comparisonOutputDirectory, comparisonOutputDirectory, os.fsdecode(comparisonGroup),
                                spectrumFileName, attackCutTime, sustainCutTime, vectorOutput_flag)

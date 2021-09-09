@@ -12,7 +12,8 @@ def run(inputDirectory, outputDirectory, fileNameAppendix, dataFileName, vectorO
         dataArray = np.delete(dataArray, 0, 0)
         parameterNumber, sampleNumber = dataArray.shape
 
-        for parameter in range((parameterNumber-1)//2):
+# If not all parameters are drawn check here v
+        for parameter in range(((parameterNumber-1)//2)+1):
                 values = dataArray[parameter*2, 1:]
                 values = values.astype(np.float)
                 deviations = dataArray[(parameter*2)+1, 1:]

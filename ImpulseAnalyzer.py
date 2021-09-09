@@ -22,7 +22,7 @@ def CalculateStatistics(values, meanValues, deviations):
 
 def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fileNameAppendix, attackTime, sustainTime, \
     centroid_flag, f0normCentroid_flag, rolloff_flag, bandwidth_flag, spread_flag, highLowEnergy_flag, \
-    tristimulus_flag, inharmonicity_flag, noisiness_flag, oddeven_flag, tuning_flag, crossingRate_flag, \
+    subBandFlux_flag, tristimulus_flag, inharmonicity_flag, noisiness_flag, oddeven_flag, tuning_flag, crossingRate_flag, \
     rms_flag, entropy_flag, temporalCentroid_flag, logAttackTime_flag, decayTime_flag, vectorOutput_flag):
 
     # clear output folder
@@ -35,8 +35,14 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     data_array = []
     series_names, centroid_values, centroid_deviations,  f0NormalizedCentroid_values, f0NormalizedCentroid_deviations, \
     rolloff_values, rolloff_deviations, bandwidth_values, bandwidth_deviation, spread_values, spread_deviations, \
-    highLowEnergy_values, highLowEnegry_deviations, tristimulus1_values, tristimulus1_deviations, \
-    tristimulus2_values, tristimulus2_deviations, tristimulus3_values, tristimulus3_deviations, \
+    highLowEnergy_values, highLowEnegry_deviations, \
+    subBandFlux1_values, subBandFlux1_deviations, subBandFlux2_values, subBandFlux2_deviations, \
+    subBandFlux3_values, subBandFlux3_deviations, subBandFlux4_values, subBandFlux4_deviations, \
+    subBandFlux5_values, subBandFlux5_deviations, subBandFlux6_values, subBandFlux6_deviations, \
+    subBandFlux7_values, subBandFlux7_deviations, subBandFlux8_values, subBandFlux8_deviations, \
+    subBandFlux9_values, subBandFlux9_deviations, subBandFlux10_values, subBandFlux10_deviations, \
+    tristimulus1_values, tristimulus1_deviations, tristimulus2_values, tristimulus2_deviations, \
+    tristimulus3_values, tristimulus3_deviations, \
     inharmonicity_values, inharmonicity_deviations, noisiness_values, noisiness_deviations, \
     oddEvenRatio_values, oddEvenRatio_deviations, tuning_values, tuning_deviations, \
     zeroCrossingRate_values, zeroCrossingRate_deviations, rms_values, rms_deviations, entropy_values, entropy_deviations, \
@@ -44,7 +50,13 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     decayTime_values, decayTime_deviations, foundFundumentalPitches = \
     [" "], ["Spectrum Centroid"], ["Centroid Deviation"], ["F0 Normalized Centroid"], ["F0 Normalized Centroid Deviations"],\
     ["Rolloff"], ["Rolloff Deviation"], ["Bandwidth"], ["Bandwidth Deviation"], ["Spread"], ["Spread Deviation"], \
-    ["High Energy - Low Energy Ratio"], ["High Energy - Low Energy Ratio Deviations"], ["Tristimulus 1"], ["Tristimulus 1 Deviations"], \
+    ["High Energy - Low Energy Ratio"], ["High Energy - Low Energy Ratio Deviations"], \
+    ["Sub-Band Flux 1"], ["Sub-Band Flux 1 Deviation"], ["Sub-Band Flux 2"], ["Sub-Band Flux 2 Deviation"], \
+    ["Sub-Band Flux 3"], ["Sub-Band Flux 3 Deviation"], ["Sub-Band Flux 4"], ["Sub-Band Flux 4 Deviation"], \
+    ["Sub-Band Flux 5"], ["Sub-Band Flux 5 Deviation"], ["Sub-Band Flux 6"], ["Sub-Band Flux 6 Deviation"], \
+    ["Sub-Band Flux 7"], ["Sub-Band Flux 7 Deviation"], ["Sub-Band Flux 8"], ["Sub-Band Flux 8 Deviation"], \
+    ["Sub-Band Flux 9"], ["Sub-Band Flux 9 Deviation"], ["Sub-Band Flux 10"], ["Sub-Band Flux 10 Deviation"], \
+    ["Tristimulus 1"], ["Tristimulus 1 Deviations"], \
     ["Tristimulus 2"], ["Tristimulus 2 Deviations"], ["Tristimulus 3"], ["Tristimulus 3 Deviations"], \
     ["Inharmonicity"], ["Inharmonicity Deviation"], ["Noisiness"], ["Noisiness Deviations"], \
     ["Odd-Even Ratio"], ["Odd-Even Ratio Deviation"], ["Tuning"], ["Tuning Deviation"], \
@@ -62,9 +74,11 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         seriesDirectory = inputDirectory + "/" + os.fsdecode(seriesDirectory)
         print("Entering folder: " + seriesDirectory)
         impulses, attackSpectrums, sustainSpectrums, decaySpectrums, centroids, f0normCentroids, rolloffs, bandwidths, \
-        spreads, highLowEnergies, tristimulus1s, tristimulus2s, tristimulus3s, inharmonicities, noisinesses, \
+        spreads, highLowEnergies, subBandFluxes1, subBandFluxes2, subBandFluxes3, subBandFluxes4, subBandFluxes5, \
+        subBandFluxes6, subBandFluxes7, subBandFluxes8, subBandFluxes9, subBandFluxes10, \
+        tristimulus1s, tristimulus2s, tristimulus3s, inharmonicities, noisinesses, \
         oddEvenRatios, tunings, crossingRates, rmss, entropies, temporalCentroids, logAttackTimes, decayTimes, \
-        pitchesHz =  [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []
+        pitchesHz =  [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []
 
         # If harmonic data and normalized centroids make no sense it may be caused by improper fundumental pitch detection.
         # Check in parameterData.csv whether the fundumentals were properly found.
@@ -100,6 +114,20 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
                 bandwidths.append(np.mean(librosa.feature.spectral_bandwidth(args.impulseLIB)))
             if spread_flag:
                 spreads.append(np.mean(iracema.features.spectral_spread(args.impulseFFT).data))
+            if subBandFlux_flag:
+                subBandFlux = pc.CalculateSubBandSpectralFlux(args, samplingRate)
+                subBandFluxes1.append(subBandFlux[0])
+                subBandFluxes2.append(subBandFlux[1])
+                subBandFluxes3.append(subBandFlux[2])
+                subBandFluxes4.append(subBandFlux[3])
+                subBandFluxes5.append(subBandFlux[4])
+                subBandFluxes6.append(subBandFlux[5])
+                subBandFluxes7.append(subBandFlux[6])
+                subBandFluxes8.append(subBandFlux[7])
+                if samplingRate > 22500:
+                    subBandFluxes9.append(subBandFlux[8])
+                if samplingRate > 45000:
+                    subBandFluxes10.append(subBandFlux[9])
             if tuning_flag:
                 tunings.append(np.mean(librosa.estimate_tuning(args.impulseLIB)))
             if crossingRate_flag:
@@ -162,6 +190,16 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         CalculateStatistics(bandwidths, bandwidth_values, bandwidth_deviation)
         CalculateStatistics(spreads, spread_values, spread_deviations)
         CalculateStatistics(highLowEnergies, highLowEnergy_values, highLowEnegry_deviations)
+        CalculateStatistics(subBandFluxes1, subBandFlux1_values, subBandFlux1_deviations)
+        CalculateStatistics(subBandFluxes2, subBandFlux2_values, subBandFlux2_deviations)
+        CalculateStatistics(subBandFluxes3, subBandFlux3_values, subBandFlux3_deviations)
+        CalculateStatistics(subBandFluxes4, subBandFlux4_values, subBandFlux4_deviations)
+        CalculateStatistics(subBandFluxes5, subBandFlux5_values, subBandFlux5_deviations)
+        CalculateStatistics(subBandFluxes6, subBandFlux6_values, subBandFlux6_deviations)
+        CalculateStatistics(subBandFluxes7, subBandFlux7_values, subBandFlux7_deviations)
+        CalculateStatistics(subBandFluxes8, subBandFlux8_values, subBandFlux8_deviations)
+        CalculateStatistics(subBandFluxes9, subBandFlux9_values, subBandFlux9_deviations)
+        CalculateStatistics(subBandFluxes10, subBandFlux10_values, subBandFlux10_deviations)
         CalculateStatistics(tristimulus1s, tristimulus1_values, tristimulus1_deviations)
         CalculateStatistics(tristimulus2s, tristimulus2_values, tristimulus2_deviations)
         CalculateStatistics(tristimulus3s, tristimulus3_values, tristimulus3_deviations)
@@ -191,6 +229,19 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         data_array = np.vstack((data_array, spread_values, spread_deviations))
     if highLowEnergy_flag:
         data_array = np.vstack((data_array, highLowEnergy_values, highLowEnegry_deviations))
+    if subBandFlux_flag:
+        data_array = np.vstack((data_array, subBandFlux1_values, subBandFlux1_deviations))
+        data_array = np.vstack((data_array, subBandFlux2_values, subBandFlux2_deviations))
+        data_array = np.vstack((data_array, subBandFlux3_values, subBandFlux3_deviations))
+        data_array = np.vstack((data_array, subBandFlux4_values, subBandFlux4_deviations))
+        data_array = np.vstack((data_array, subBandFlux5_values, subBandFlux5_deviations))
+        data_array = np.vstack((data_array, subBandFlux6_values, subBandFlux6_deviations))
+        data_array = np.vstack((data_array, subBandFlux7_values, subBandFlux7_deviations))
+        data_array = np.vstack((data_array, subBandFlux8_values, subBandFlux8_deviations))
+        if samplingRate > 22500:
+            data_array = np.vstack((data_array, subBandFlux9_values, subBandFlux9_deviations))
+        if samplingRate > 45000:
+            data_array = np.vstack((data_array, subBandFlux10_values, subBandFlux10_deviations))
     if tristimulus_flag:
         data_array = np.vstack((data_array, tristimulus1_values, tristimulus1_deviations))
         data_array = np.vstack((data_array, tristimulus2_values, tristimulus2_deviations))
@@ -240,6 +291,29 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         if highLowEnergy_flag:
             dataWriter.writerow(highLowEnergy_values)
             dataWriter.writerow(highLowEnegry_deviations)
+        if subBandFlux_flag:
+            dataWriter.writerow(subBandFlux1_values)
+            dataWriter.writerow(subBandFlux1_deviations)
+            dataWriter.writerow(subBandFlux2_values)
+            dataWriter.writerow(subBandFlux2_deviations)
+            dataWriter.writerow(subBandFlux3_values)
+            dataWriter.writerow(subBandFlux3_deviations)
+            dataWriter.writerow(subBandFlux4_values)
+            dataWriter.writerow(subBandFlux4_deviations)
+            dataWriter.writerow(subBandFlux5_values)
+            dataWriter.writerow(subBandFlux5_deviations)
+            dataWriter.writerow(subBandFlux6_values)
+            dataWriter.writerow(subBandFlux6_deviations)
+            dataWriter.writerow(subBandFlux7_values)
+            dataWriter.writerow(subBandFlux7_deviations)
+            dataWriter.writerow(subBandFlux8_values)
+            dataWriter.writerow(subBandFlux8_deviations)
+            if samplingRate > 22500:
+                dataWriter.writerow(subBandFlux9_values)
+                dataWriter.writerow(subBandFlux9_deviations)
+            if samplingRate > 45000:
+                dataWriter.writerow(subBandFlux10_values)
+                dataWriter.writerow(subBandFlux10_deviations)
         if tristimulus_flag:
             dataWriter.writerow(tristimulus1_values)
             dataWriter.writerow(tristimulus1_deviations)
@@ -314,7 +388,6 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
 
 
     np.save(outputDirectory + '/' + spectrumFileName + '_' + fileNameAppendix + '.npy', spectrum_array)
-    print(spectrum_array)
 
 
 
