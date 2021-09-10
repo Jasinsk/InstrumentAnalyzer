@@ -5,6 +5,7 @@ import librosa as lbr
 import librosa.display
 import math
 import shutil
+import wave
 
 # This script takes .wav files that are recordings of impuls series and parses each individual impuls into a seperate file.
 # Each recording put into the input folder is parsed into a seperate folder inside the output directory
@@ -123,7 +124,9 @@ for seriesSignal in os.listdir(os.fsencode(inputDirectory)):
     inputSignal = inputDirectory + "/" + os.fsdecode(seriesSignal)
     seriesDirectory = os.fsdecode(seriesSignal).rstrip('.wav')
 
-    signal, samplingRate = lbr.load(inputSignal)
+    print("Entering: " + inputSignal)
+
+    signal, samplingRate = lbr.load(inputSignal, sr=None)
 
     foundPeaks = FindPeaks(signal, samplingRate, thresholdPercentage=thresholdPercentage)
     foundPeaks = RemoveDuplicatePeaks(foundPeaks, samplingRate, minimalTimeDifference, decayTime, len(signal))
@@ -141,6 +144,7 @@ for seriesSignal in os.listdir(os.fsencode(inputDirectory)):
         validatedIndicator[el] = 1
         validatedIndicator[el+1]=-1
 
+    # Drawing the results of the parsers work
     timeVector = np.arange(0, len(signal)/samplingRate, 1/samplingRate)
     ylimit = max(abs(signal)) * 1.2
     plt.figure()
