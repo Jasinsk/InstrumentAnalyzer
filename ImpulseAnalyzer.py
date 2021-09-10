@@ -21,7 +21,7 @@ def CalculateStatistics(values, meanValues, deviations):
     return 0
 
 def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fileNameAppendix, attackTime, sustainTime, \
-    centroid_flag, f0normCentroid_flag, rolloff_flag, bandwidth_flag, spread_flag, highLowEnergy_flag, \
+    centroid_flag, f0normCentroid_flag, rolloff_flag, bandwidth_flag, spread_flag, flux_flag, highLowEnergy_flag, \
     subBandFlux_flag, tristimulus_flag, inharmonicity_flag, noisiness_flag, oddeven_flag, tuning_flag, crossingRate_flag, \
     rms_flag, entropy_flag, temporalCentroid_flag, logAttackTime_flag, decayTime_flag, vectorOutput_flag):
 
@@ -35,7 +35,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     data_array = []
     series_names, centroid_values, centroid_deviations,  f0NormalizedCentroid_values, f0NormalizedCentroid_deviations, \
     rolloff_values, rolloff_deviations, bandwidth_values, bandwidth_deviation, spread_values, spread_deviations, \
-    highLowEnergy_values, highLowEnegry_deviations, \
+    flux_values, flux_deviations, highLowEnergy_values, highLowEnegry_deviations, \
     subBandFlux1_values, subBandFlux1_deviations, subBandFlux2_values, subBandFlux2_deviations, \
     subBandFlux3_values, subBandFlux3_deviations, subBandFlux4_values, subBandFlux4_deviations, \
     subBandFlux5_values, subBandFlux5_deviations, subBandFlux6_values, subBandFlux6_deviations, \
@@ -50,7 +50,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     decayTime_values, decayTime_deviations, foundFundumentalPitches = \
     [" "], ["Spectrum Centroid"], ["Centroid Deviation"], ["F0 Normalized Centroid"], ["F0 Normalized Centroid Deviations"],\
     ["Rolloff"], ["Rolloff Deviation"], ["Bandwidth"], ["Bandwidth Deviation"], ["Spread"], ["Spread Deviation"], \
-    ["High Energy - Low Energy Ratio"], ["High Energy - Low Energy Ratio Deviations"], \
+    ["Spectral Flux"], ["Spectral Flux Deviations"], ["High Energy - Low Energy Ratio"], ["High Energy - Low Energy Ratio Deviations"], \
     ["Sub-Band Flux 1"], ["Sub-Band Flux 1 Deviation"], ["Sub-Band Flux 2"], ["Sub-Band Flux 2 Deviation"], \
     ["Sub-Band Flux 3"], ["Sub-Band Flux 3 Deviation"], ["Sub-Band Flux 4"], ["Sub-Band Flux 4 Deviation"], \
     ["Sub-Band Flux 5"], ["Sub-Band Flux 5 Deviation"], ["Sub-Band Flux 6"], ["Sub-Band Flux 6 Deviation"], \
@@ -69,16 +69,18 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     # Spectrum scaling factors
     impulseTime, maxAttack, maxSustain, maxDecay = 0, 0, 0, 0
 
+    mfcc_flag = False
+
     # ---------------Calculating spectrums and parameters------------------
     for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
         seriesDirectory = inputDirectory + "/" + os.fsdecode(seriesDirectory)
         print("Entering folder: " + seriesDirectory)
         impulses, attackSpectrums, sustainSpectrums, decaySpectrums, centroids, f0normCentroids, rolloffs, bandwidths, \
-        spreads, highLowEnergies, subBandFluxes1, subBandFluxes2, subBandFluxes3, subBandFluxes4, subBandFluxes5, \
+        spreads, fluxes, highLowEnergies, subBandFluxes1, subBandFluxes2, subBandFluxes3, subBandFluxes4, subBandFluxes5, \
         subBandFluxes6, subBandFluxes7, subBandFluxes8, subBandFluxes9, subBandFluxes10, \
         tristimulus1s, tristimulus2s, tristimulus3s, inharmonicities, noisinesses, \
         oddEvenRatios, tunings, crossingRates, rmss, entropies, temporalCentroids, logAttackTimes, decayTimes, \
-        pitchesHz =  [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []
+        pitchesHz =  [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []
 
         # If harmonic data and normalized centroids make no sense it may be caused by improper fundumental pitch detection.
         # Check in parameterData.csv whether the fundumentals were properly found.
@@ -91,8 +93,9 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             args.fundumentalPitch = fundumentalPitch
             # librosa loading
             print("Loading file: " + impulseFileName)
-            args.impulseLIB, samplingRate = librosa.load(impulseFileName, sr=None)
-            #samplingRate = 44100
+            args.impulseLIB, samplingRate = librosa.load(impulseFileName, sr=48000)
+            # Audio Samples are resampled to 48kHz to not cause problems for sub-band filtering and mfcc calculation
+            
             #args.impulseLIB = librosa.to_mono(args.impulseLIB)
             # iracema loading
             args.impulseIRA = iracema.Audio(impulseFileName)
@@ -114,6 +117,8 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
                 bandwidths.append(np.mean(librosa.feature.spectral_bandwidth(args.impulseLIB)))
             if spread_flag:
                 spreads.append(np.mean(iracema.features.spectral_spread(args.impulseFFT).data))
+            if flux_flag:
+                fluxes.append(np.mean(iracema.features.spectral_flux(args.impulseFFT).data))
             if subBandFlux_flag:
                 subBandFlux = pc.CalculateSubBandSpectralFlux(args, samplingRate)
                 subBandFluxes1.append(subBandFlux[0])
@@ -128,6 +133,9 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
                     subBandFluxes9.append(subBandFlux[8])
                 if samplingRate > 45000:
                     subBandFluxes10.append(subBandFlux[9])
+            if mfcc_flag:
+                mfccs = librosa.feature.mfcc(args.impulseLIB, 48000, n_mfcc=13)
+                # Teraz jeszcze tylko trzeba wiedzieć co z tym zrobić...
             if tuning_flag:
                 tunings.append(np.mean(librosa.estimate_tuning(args.impulseLIB)))
             if crossingRate_flag:
@@ -189,6 +197,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         CalculateStatistics(rolloffs, rolloff_values, rolloff_deviations)
         CalculateStatistics(bandwidths, bandwidth_values, bandwidth_deviation)
         CalculateStatistics(spreads, spread_values, spread_deviations)
+        CalculateStatistics(fluxes, flux_values, flux_deviations)
         CalculateStatistics(highLowEnergies, highLowEnergy_values, highLowEnegry_deviations)
         CalculateStatistics(subBandFluxes1, subBandFlux1_values, subBandFlux1_deviations)
         CalculateStatistics(subBandFluxes2, subBandFlux2_values, subBandFlux2_deviations)
@@ -227,6 +236,8 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         data_array = np.vstack((data_array, bandwidth_values, bandwidth_deviation))
     if spread_flag:
         data_array = np.vstack((data_array, spread_values, spread_deviations))
+    if flux_flag:
+        data_array = np.vstack((data_array, flux_values, flux_deviations))
     if highLowEnergy_flag:
         data_array = np.vstack((data_array, highLowEnergy_values, highLowEnegry_deviations))
     if subBandFlux_flag:
@@ -288,6 +299,9 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         if spread_flag:
             dataWriter.writerow(spread_values)
             dataWriter.writerow(spread_deviations)
+        if flux_flag:
+            dataWriter.writerow(flux_values)
+            dataWriter.writerow(flux_deviations)
         if highLowEnergy_flag:
             dataWriter.writerow(highLowEnergy_values)
             dataWriter.writerow(highLowEnegry_deviations)
