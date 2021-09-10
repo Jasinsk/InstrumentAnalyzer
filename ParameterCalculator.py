@@ -253,7 +253,6 @@ def CalculateEuclideanDistance(signal):
 # Calculates sub-band spectral flux as defined in "Exploring perceptual and acoustical correlates of polyphonic timbre"
 def CalculateSubBandSpectralFlux(args, samplingRate):
     # Filter into 10 sub-band octave filters
-    print(samplingRate)
     if samplingRate < 22500: #You can't filter over the nyquist frequency
         freqLimit = 4000
         print("Sampling Rate too low for 10 octave bands, fs < 22450")
@@ -272,6 +271,5 @@ def CalculateSubBandSpectralFlux(args, samplingRate):
     filteredAudio = args.impulseIRA # iracema feature extraction works on it's own class so we have to put the filtered audio into it
     for i in range (0, len(filteredSignal[0,:])):
         filteredAudio.data = filteredSignal[:,i]
-        subBandFlux.append(CalculateEuclideanDistance(iracema.features.spectral_flux(filteredAudio).data))
-
+        subBandFlux.append(CalculateEuclideanDistance(iracema.features.spectral_flux(iracema.spectral.fft(filteredAudio, window_size=2048, hop_size=1024)).data))
     return subBandFlux
