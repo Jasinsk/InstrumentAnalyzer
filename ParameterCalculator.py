@@ -85,7 +85,7 @@ def ExtractHarmonicDataFromSpectrums(spectrums, spectrumFrequencies, mathHarmoni
 
         for fftSample in range (0, len(spectrum)):
             if spectrumFrequencies[fftSample] > mathHarmonicFrequencies[harmonicNumber]:
-                peakValue, peakFrequency = 0, 0
+                peakValue, peakFrequency = -200, 0
 
                 for i in range (fftSample-buffor, fftSample+buffor):
                     if spectrum[i] >= peakValue:
@@ -134,6 +134,15 @@ def CalculateNoisiness(spectrums, frequencies, harmonicsData, harmonicWidth = 0.
 
         noisinesses.append((fullEnergy-harmonicEnergy)/fullEnergy)
     return noisinesses
+
+def CalculateIrregularity(harmonicData): # Calculates spectral harmonic irregularity according to Krimphoff, McAdams 1994
+    irregularities = []
+    for take in harmonicData:
+        irregularity = 0
+        for i in range (1, len(take.amplitudes)-1):
+            irregularity += abs(take.amplitudes[i] - np.mean(take.amplitudes[i - 1] + take.amplitudes[i] + take.amplitudes[i + 1]))
+        irregularities.append(np.log10(irregularity))
+    return irregularities
 
 def CalculateHighEnergyLowEnergyRatio(spectrums, frequencies, boundaryFrequency = 1500):
     highlowenergies = []

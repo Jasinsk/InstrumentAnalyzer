@@ -21,6 +21,7 @@ rolloff_flag = False
 bandwidth_flag = False
 spread_flag = False
 flux_flag = True
+irregularity_flag = True
 highLowEnergy_flag = False
 subBandFlux_flag = False
 tristimulus_flag = False
@@ -57,8 +58,8 @@ for comparisonGroup in os.listdir(os.fsencode(analyzerInputDirectory)):
     if analyses_flag:
         ImpulseAnalyzer.run(comparisonFolderName, comparisonOutputDirectory, parameterFileName, spectrumFileName,
             os.fsdecode(comparisonGroup), attackCutTime, sustainCutTime, centroid_flag, f0normCentroid_flag, rolloff_flag,
-            bandwidth_flag, spread_flag, flux_flag, highLowEnergy_flag, subBandFlux_flag, tristimulus_flag, inharmonicity_flag,
-            noisiness_flag, oddeven_flag, tuning_flag, crossingRate_flag, rms_flag, entropy_flag,
+            bandwidth_flag, spread_flag, flux_flag, irregularity_flag, highLowEnergy_flag, subBandFlux_flag, tristimulus_flag,
+            inharmonicity_flag, noisiness_flag, oddeven_flag, tuning_flag, crossingRate_flag, rms_flag, entropy_flag,
             temporalCentroid_flag, logAttackTime_flag, decayTime_flag, vectorOutput_flag)
 
     if parameter_displayer_flag:
