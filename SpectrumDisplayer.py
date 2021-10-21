@@ -58,7 +58,7 @@ def run(inputDirectory, outputDirectory, fileNameAppendix, spectrumFileName, att
         figure.set_size_inches(19, 8)
 
         if vectorOutput_flag:
-            plt.savefig(seriesNames + '.eps', dpi=300, format="eps")
+            plt.savefig(seriesNames + '.pdf', dpi=1200, format="pdf")
         else:
             plt.savefig(seriesNames, dpi = 100)
 

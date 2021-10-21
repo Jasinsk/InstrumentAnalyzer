@@ -21,7 +21,7 @@ def CalculateStatistics(values, meanValues, deviations):
 def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fileNameAppendix, attackTime, sustainTime,
     centroid_flag, f0normCentroid_flag, rolloff_flag, bandwidth_flag, spread_flag, flux_flag, irregularity_flag, highLowEnergy_flag,
     subBandFlux_flag, tristimulus_flag, inharmonicity_flag, noisiness_flag, oddeven_flag, tuning_flag, crossingRate_flag,
-    rms_flag, entropy_flag, temporalCentroid_flag, logAttackTime_flag, decayTime_flag, vectorOutput_flag):
+    rms_flag, entropy_flag, temporalCentroid_flag, logAttackTime_flag, decayTime_flag, mfcc_flag):
 
     # clear output folder
     if os.path.isdir(outputDirectory):
@@ -45,7 +45,9 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     oddEvenRatio_values, oddEvenRatio_deviations, tuning_values, tuning_deviations, \
     zeroCrossingRate_values, zeroCrossingRate_deviations, rms_values, rms_deviations, entropy_values, entropy_deviations, \
     temporalCentroid_values, temporalCentroid_deviations, logAttackTime_values, logAttackTime_deviations, \
-    decayTime_values, decayTime_deviations, foundFundumentalPitches = \
+    decayTime_values, decayTime_deviations, mfcc1_means_values, mfcc1_means_deviations, mfcc1_stddevs_values, mfcc1_stddevs_deviations, \
+    mfcc2_means_values, mfcc2_means_deviations, mfcc2_stddevs_values, mfcc2_stddevs_deviations, mfcc3_means_values, mfcc3_means_deviations, \
+    mfcc3_stddevs_values, mfcc3_stddevs_deviations, mfcc4_means_values, mfcc4_means_deviations, mfcc4_stddevs_values, mfcc4_stddevs_deviations, foundFundumentalPitches = \
     [" "], ["Spectrum Centroid"], ["Centroid Deviation"], ["F0 Normalized Centroid"], ["F0 Normalized Centroid Deviations"],\
     ["Rolloff"], ["Rolloff Deviation"], ["Bandwidth"], ["Bandwidth Deviation"], ["Spread"], ["Spread Deviation"], \
     ["Spectral Flux"], ["Spectral Flux Deviations"], ["Spectral Irregularity"], ["Spectral Irregularity Deviations"], ["High Energy - Low Energy Ratio"], ["High Energy - Low Energy Ratio Deviations"], \
@@ -60,14 +62,15 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     ["Odd-Even Ratio"], ["Odd-Even Ratio Deviation"], ["Tuning"], ["Tuning Deviation"], \
     ["Zero Crossing Rate"], ["Zero Crossing Rate Deviation"], ["RMS"], ["RMS Deviation"], ["Entropy"], ["Entropy Deviation"], \
     ["Temporal Centroid"], ["Temporal Centroid Deviations"], ["Log Attack Time"], ["Log Attack Time Deviations"], \
-    ["Decay Time"], ["Decay Time Deviation"], ["Average Found Fundumental Pitches"]
+    ["Decay Time"], ["Decay Time Deviation"], ["MFCC 1 - mean"], ["MFCC 1 - mean deviations"], ["MFCC 1 - STDDEV"], ["MFCC 1 - STDDEV deviations"], \
+    ["MFCC 2 - mean"], ["MFCC 2 - mean deviations"], ["MFCC 2 - STDDEV"], ["MFCC 2 - STDDEV deviations"], \
+    ["MFCC 3 - mean"], ["MFCC 3 - mean deviations"], ["MFCC 3 - STDDEV"], ["MFCC 3 - STDDEV deviations"], \
+    ["MFCC 4 - mean"], ["MFCC 4 - mean deviations"], ["MFCC 4 - STDDEV"], ["MFCC 4 - STDDEV deviations"], ["Average Found Fundumental Pitches"]
 
     allAttackSpectrums, allSustainSpectrums, allDecaySpectrums, allAttackFrequencies, allSustainFrequencies, \
             allDecayFrequencies, seriesNames = [], [], [], [], [], [], []
     # Spectrum scaling factors
     impulseTime, maxAttack, maxSustain, maxDecay = 0, 0, 0, 0
-
-    mfcc_flag = False
 
     # ---------------Calculating spectrums and parameters------------------
     for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
@@ -78,7 +81,10 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         subBandFluxes6, subBandFluxes7, subBandFluxes8, subBandFluxes9, subBandFluxes10, \
         tristimulus1s, tristimulus2s, tristimulus3s, inharmonicities, noisinesses, \
         oddEvenRatios, tunings, crossingRates, rmss, entropies, temporalCentroids, logAttackTimes, decayTimes, \
-        pitchesHz =  [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []
+        mfcc1_means, mfcc1_stddevs, mfcc2_means, mfcc2_stddevs, mfcc3_means, mfcc3_stddevs, mfcc4_means, mfcc4_stddevs, \
+         pitchesHz =  [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], \
+                      [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], \
+                      [], [], [], []
 
         # If harmonic data and normalized centroids make no sense it may be caused by improper fundumental pitch detection.
         # Check in parameterData.csv whether the fundumentals were properly found.
@@ -93,8 +99,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             print("Loading file: " + impulseFileName)
             args.impulseLIB, samplingRate = librosa.load(impulseFileName, sr=48000)
             # Audio Samples are resampled to 48kHz to not cause problems for sub-band filtering and mfcc calculation
-            
-            #args.impulseLIB = librosa.to_mono(args.impulseLIB)
+
             # iracema loading
             args.impulseIRA = iracema.Audio(impulseFileName)
             args.impulseFFT = iracema.spectral.fft(args.impulseIRA, window_size=2048, hop_size=1024)
@@ -103,16 +108,16 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             pitchesHz.append(np.median(args.pitch.data))
 
             if centroid_flag:
-                centroids.append(np.mean(librosa.feature.spectral_centroid(args.impulseLIB)))
+                centroids.append(np.mean(librosa.feature.spectral_centroid(args.impulseLIB, sr=samplingRate)))
             if f0normCentroid_flag:
                 if fundumentalPitch == 0:
-                    f0normCentroids.append((np.mean(librosa.feature.spectral_centroid(args.impulseLIB) / np.median(args.pitch.data))))
+                    f0normCentroids.append((np.mean(librosa.feature.spectral_centroid(args.impulseLIB, sr=samplingRate) / np.median(args.pitch.data))))
                 else:
-                    f0normCentroids.append((np.mean(librosa.feature.spectral_centroid(args.impulseLIB) / fundumentalPitch)))
+                    f0normCentroids.append((np.mean(librosa.feature.spectral_centroid(args.impulseLIB, sr=samplingRate) / fundumentalPitch)))
             if rolloff_flag:
-                rolloffs.append(np.mean(librosa.feature.spectral_rolloff(args.impulseLIB)))
+                rolloffs.append(np.mean(librosa.feature.spectral_rolloff(args.impulseLIB, sr=samplingRate)))
             if bandwidth_flag:
-                bandwidths.append(np.mean(librosa.feature.spectral_bandwidth(args.impulseLIB)))
+                bandwidths.append(np.mean(librosa.feature.spectral_bandwidth(args.impulseLIB, sr=samplingRate)))
             if spread_flag:
                 spreads.append(np.mean(iracema.features.spectral_spread(args.impulseFFT).data))
             if flux_flag:
@@ -131,11 +136,8 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
                     subBandFluxes9.append(subBandFlux[8])
                 if samplingRate > 45000:
                     subBandFluxes10.append(subBandFlux[9])
-            if mfcc_flag:
-                mfccs = librosa.feature.mfcc(args.impulseLIB, 48000, n_mfcc=13)
-                # Teraz jeszcze tylko trzeba wiedzieć co z tym zrobić...
             if tuning_flag:
-                tunings.append(np.mean(librosa.estimate_tuning(args.impulseLIB)))
+                tunings.append(np.mean(librosa.estimate_tuning(args.impulseLIB, sr=samplingRate)))
             if crossingRate_flag:
                 crossingRates.append(np.mean(librosa.feature.zero_crossing_rate(args.impulseLIB)))
             if rms_flag:
@@ -148,6 +150,16 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
                 logAttackTimes.append(pc.CalculateLogAttackTime(args))
             if decayTime_flag:
                 decayTimes.append(pc.CalculateDecayTime(args))
+            if mfcc_flag:
+                mfccs = librosa.feature.mfcc(args.impulseLIB, sr=samplingRate, n_mfcc=4)
+                mfcc1_means.append(np.mean(mfccs[0]))
+                mfcc1_stddevs.append(np.std(mfccs[0]))
+                mfcc2_means.append(np.mean(mfccs[1]))
+                mfcc2_stddevs.append(np.std(mfccs[1]))
+                mfcc3_means.append(np.mean(mfccs[2]))
+                mfcc3_stddevs.append(np.std(mfccs[2]))
+                mfcc4_means.append(np.mean(mfccs[3]))
+                mfcc4_stddevs.append(np.std(mfccs[3]))
             impulses = pc.InsertIntoVstack(args.impulseLIB, impulses)
 
         fullFrequencies, fullSpectrums, attackFrequencies, attackSpectrums, sustainFrequencies, sustainSpectrums, \
@@ -223,6 +235,14 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         CalculateStatistics(temporalCentroids, temporalCentroid_values, temporalCentroid_deviations)
         CalculateStatistics(logAttackTimes, logAttackTime_values, logAttackTime_deviations)
         CalculateStatistics(decayTimes, decayTime_values, decayTime_deviations)
+        CalculateStatistics(mfcc1_means, mfcc1_means_values, mfcc1_means_deviations)
+        CalculateStatistics(mfcc1_stddevs, mfcc1_stddevs_values, mfcc1_stddevs_deviations)
+        CalculateStatistics(mfcc2_means, mfcc2_means_values, mfcc2_means_deviations)
+        CalculateStatistics(mfcc2_stddevs, mfcc2_stddevs_values, mfcc2_stddevs_deviations)
+        CalculateStatistics(mfcc3_means, mfcc3_means_values, mfcc3_means_deviations)
+        CalculateStatistics(mfcc3_stddevs, mfcc3_stddevs_values, mfcc3_stddevs_deviations)
+        CalculateStatistics(mfcc4_means, mfcc4_means_values, mfcc4_means_deviations)
+        CalculateStatistics(mfcc4_stddevs, mfcc4_stddevs_values, mfcc4_stddevs_deviations)
 
     # -----------------Saving results-------------------
     # Saving parameter data into .npy file
@@ -280,6 +300,15 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         data_array = np.vstack((data_array, logAttackTime_values, logAttackTime_deviations))
     if decayTime_flag:
         data_array = np.vstack((data_array, decayTime_values, decayTime_deviations))
+    if mfcc_flag:
+        data_array = np.vstack((data_array, mfcc1_means_values, mfcc1_means_deviations))
+        data_array = np.vstack((data_array, mfcc1_stddevs_values, mfcc1_stddevs_deviations))
+        data_array = np.vstack((data_array, mfcc2_means_values, mfcc2_means_deviations))
+        data_array = np.vstack((data_array, mfcc2_stddevs_values, mfcc2_stddevs_deviations))
+        data_array = np.vstack((data_array, mfcc3_means_values, mfcc3_means_deviations))
+        data_array = np.vstack((data_array, mfcc3_stddevs_values, mfcc3_stddevs_deviations))
+        data_array = np.vstack((data_array, mfcc4_means_values, mfcc4_means_deviations))
+        data_array = np.vstack((data_array, mfcc4_stddevs_values, mfcc4_stddevs_deviations))
 
     np.save(outputDirectory + '/' + parameterFileName + '_' + fileNameAppendix + '.npy', data_array)
 
@@ -371,6 +400,23 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         if decayTime_flag:
             dataWriter.writerow(decayTime_values)
             dataWriter.writerow(decayTime_deviations)
+        if mfcc_flag:
+            dataWriter.writerow(mfcc1_means_values)
+            dataWriter.writerow(mfcc1_means_deviations)
+            dataWriter.writerow(mfcc1_stddevs_values)
+            dataWriter.writerow(mfcc1_stddevs_deviations)
+            dataWriter.writerow(mfcc2_means_values)
+            dataWriter.writerow(mfcc2_means_deviations)
+            dataWriter.writerow(mfcc2_stddevs_values)
+            dataWriter.writerow(mfcc2_stddevs_deviations)
+            dataWriter.writerow(mfcc3_means_values)
+            dataWriter.writerow(mfcc3_means_deviations)
+            dataWriter.writerow(mfcc3_stddevs_values)
+            dataWriter.writerow(mfcc3_stddevs_deviations)
+            dataWriter.writerow(mfcc4_means_values)
+            dataWriter.writerow(mfcc4_means_deviations)
+            dataWriter.writerow(mfcc4_stddevs_values)
+            dataWriter.writerow(mfcc4_stddevs_deviations)
         dataWriter.writerow(foundFundumentalPitches)
 
     print("Data saved to: " + parameterFileName + '_' + fileNameAppendix)
