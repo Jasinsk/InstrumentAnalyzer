@@ -199,7 +199,7 @@ def CalculateRMS(args):
 #Calculates the signals temporal centroid. Only takes into account signal over threshold to disguard silence.
 # Watch out when using signals of different lengths.
 
-def CalculateTemporalCentroid(args, windowLength = 2048, hopsize = 1024, threshold = 0.1):
+def CalculateTemporalCentroid(args, windowLength = 128, hopsize = 64, threshold = 0.1):
     envelope = iracema.features.peak_envelope(args.impulseIRA, windowLength, hopsize)
     maxEnv = max(envelope.data)
     amplitudeSum = sum(envelope.data)
@@ -211,7 +211,7 @@ def CalculateTemporalCentroid(args, windowLength = 2048, hopsize = 1024, thresho
     return (ampXTimeSum/amplitudeSum)
 
 # Calculate log of attack time of signal. The algorythm was simplified when it comes to finding the start time of attack due to the it giving better results for guitar
-def CalculateLogAttackTime(args, windowLength = 256, hopsize = 128, threshold = 0.15):
+def CalculateLogAttackTime(args, windowLength = 64, hopsize = 32, threshold = 0.1):
     envelope = iracema.features.peak_envelope(args.impulseIRA, windowLength, hopsize)
     maxEnv = max(envelope.data)
     startTime, stopTime = 0, 0
@@ -230,7 +230,7 @@ def CalculateLogAttackTime(args, windowLength = 256, hopsize = 128, threshold = 
         return 0
 
 # Calculates time between the peak of impulse and it decaying below the value of max*ratio
-def CalculateDecayTime(args, windowLength = 2048, hopsize = 1024, ratio = 0.1):
+def CalculateDecayTime(args, windowLength = 128, hopsize = 64, ratio = 0.05):
     envelope = iracema.features.peak_envelope(args.impulseIRA, windowLength, hopsize)
     maxEnv = max(envelope.data)
 

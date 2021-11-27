@@ -129,6 +129,9 @@ decayTime = 8
 acceptableEnergyDeviation = 0.15
 attackEnergyTime = 1
 attackEnergyDeviation = 0.03
+
+# Show figures of found peaks to check correct working
+showFoundPeaks_Flag = False
 # ---------------------------------------------
 
 if os.path.isdir(outputDirectory):
@@ -159,17 +162,18 @@ for seriesSignal in os.listdir(os.fsencode(inputDirectory)):
         validatedIndicator[el] = 1
         validatedIndicator[el+1]=-1
 
-    # Drawing the results of the parsers work
-    timeVector = np.arange(0, len(signal)/samplingRate, 1/samplingRate)
-    ylimit = max(abs(signal)) * 1.2
-    plt.figure()
-    plt.plot(timeVector, signal, color='grey', label='Signal')
-    plt.plot(timeVector, parsingIndicator, 'r', label='Discarded peaks')
-    plt.plot(timeVector, validatedIndicator, color = 'chartreuse', label='Accepted peaks')
-    plt.ylim(-ylimit, ylimit)
-    plt.legend(loc='lower right')
-    plt.xlabel('time [s]')
-    plt.title(seriesDirectory)
+    if showFoundPeaks_Flag:
+        # Drawing the results of the parsers work
+        timeVector = np.arange(0, len(signal)/samplingRate, 1/samplingRate)
+        ylimit = max(abs(signal)) * 1.2
+        plt.figure()
+        plt.plot(timeVector, signal, color='grey', label='Signal')
+        plt.plot(timeVector, parsingIndicator, 'r', label='Discarded peaks')
+        plt.plot(timeVector, validatedIndicator, color = 'chartreuse', label='Accepted peaks')
+        plt.ylim(-ylimit, ylimit)
+        plt.legend(loc='lower right')
+        plt.xlabel('time [s]')
+        plt.title(seriesDirectory)
 
-    # Uncomment to see what the parser is grabing.
-    plt.show()
+        # Uncomment to see what the parser is grabing.
+        plt.show()
