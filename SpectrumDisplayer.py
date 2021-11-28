@@ -12,7 +12,7 @@ def DrawSpectrum(frequencies, spectrum, maxValue, startTime, endTime):
     plt.xticks(fontsize=21)
     #plt.ticklabel_format(useMathText=True, scilimits=(0, 0))
     plt.yticks(fontsize=17)
-    plt.ylim([-69, -25])
+    plt.ylim([-69, -35])
     plt.title(str(startTime) + ' - ' + str(endTime) + ' [s]', fontsize=25)
     plt.grid(linewidth=1, which='both')
     # plt.yscale("log")
@@ -20,7 +20,7 @@ def DrawSpectrum(frequencies, spectrum, maxValue, startTime, endTime):
 
 def run(inputDirectory, outputDirectory, fileNameAppendix, spectrumFileName, attackTime, sustainTime, vectorOutput_flag):
 
-    spectrumArray = np.load(outputDirectory + '/' + spectrumFileName + '_' + fileNameAppendix + '.npy')
+    spectrumArray = np.load(outputDirectory + '/' + spectrumFileName + '_' + fileNameAppendix + '.npy', allow_pickle=True)
 
     maxAttack, maxSustain, maxDecay, impulseTime = 0, 0, 0, 7.00
 
@@ -45,7 +45,8 @@ def run(inputDirectory, outputDirectory, fileNameAppendix, spectrumFileName, att
         kDecayFrequencies = allDecayFrequencies/1000
 
         plt.subplot(131)
-        plt.ylabel("Magnitude [dB FS]", fontsize = 32)
+        #plt.ylabel("Magnitude [dB FS]", fontsize = 32)
+        plt.ylabel("Amplituda [dB FS]", fontsize = 32)
         DrawSpectrum(scalingFactor * allAttackFrequencies, allAttackSpectrums, maxAttack, '0', attackTime)
         plt.subplot(132)
         DrawSpectrum(scalingFactor * allSustainFrequencies, allSustainSpectrums, maxSustain, attackTime, sustainTime)
