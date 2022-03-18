@@ -89,7 +89,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         # If harmonic data and normalized centroids make no sense it may be caused by improper fundumental pitch detection.
         # Check in parameterData.csv whether the fundumentals were properly found.
         # If not, then manually add the correct pitch below and rerun the offending sounds.
-        fundumentalPitch = 0 #523.26 #261.63
+        fundumentalPitch =  0 #523.26 #261.63
 
         for impulseFile in os.listdir(os.fsencode(seriesDirectory)):
             impulseFileName = seriesDirectory + "/" + os.fsdecode(impulseFile)

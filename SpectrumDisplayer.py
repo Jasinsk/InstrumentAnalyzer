@@ -12,7 +12,7 @@ def DrawSpectrum(frequencies, spectrum, maxValue, startTime, endTime):
     plt.xticks(fontsize=21)
     #plt.ticklabel_format(useMathText=True, scilimits=(0, 0))
     plt.yticks(fontsize=17)
-    plt.ylim([-69, -35])
+    plt.ylim([-69, -20])
     plt.title(str(startTime) + ' - ' + str(endTime) + ' [s]', fontsize=25)
     plt.grid(linewidth=1, which='both')
     # plt.yscale("log")

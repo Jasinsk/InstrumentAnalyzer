@@ -123,15 +123,15 @@ minimalTimeDifference = 7
 
 # Impulse parsing
 attackTime = 0.1
-decayTime = 8
+decayTime = 7
 
 # Energy validation of impulses
-acceptableEnergyDeviation = 0.15
+acceptableEnergyDeviation = 0.2
 attackEnergyTime = 1
-attackEnergyDeviation = 0.03
+attackEnergyDeviation = 0.2
 
 # Show figures of found peaks to check correct working
-showFoundPeaks_Flag = False
+showFoundPeaks_Flag = True
 # ---------------------------------------------
 
 if os.path.isdir(outputDirectory):
@@ -175,5 +175,4 @@ for seriesSignal in os.listdir(os.fsencode(inputDirectory)):
         plt.xlabel('time [s]')
         plt.title(seriesDirectory)
 
-        # Uncomment to see what the parser is grabing.
         plt.show()

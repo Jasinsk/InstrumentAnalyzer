@@ -88,8 +88,8 @@ def ExtractHarmonicDataFromSpectrums(spectrums, spectrumFrequencies, mathHarmoni
                 peakValue, peakFrequency = -200, 0
 
                 for i in range (fftSample-buffor, fftSample+buffor):
-                    if spectrum[i] >= peakValue:
-                        peakValue = spectrum[i]
+                    if pow(10, spectrum[i]/10) >= peakValue:
+                        peakValue = pow(10, spectrum[i]/10)
                         peakFrequency = spectrumFrequencies[i]
 
                 amplitudes.append(peakValue)

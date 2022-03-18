@@ -49,7 +49,7 @@ vectorOutput_flag = False
 # Decide which sections should be run
 analyses_flag = False
 parameter_displayer_flag = True
-spectrum_displayer_flag = False
+spectrum_displayer_flag = True
 # -----------------Running sections-------------------
 for comparisonGroup in os.listdir(os.fsencode(analyzerInputDirectory)):
 
