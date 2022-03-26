@@ -201,6 +201,7 @@ def CalculateRMS(args):
 
 def CalculateTemporalCentroid(args, windowLength = 128, hopsize = 64, threshold = 0.1):
     envelope = iracema.features.peak_envelope(args.impulseIRA, windowLength, hopsize)
+    envelope.data = 10 * np.log10(abs(envelope.data))
     maxEnv = max(envelope.data)
     amplitudeSum = sum(envelope.data)
     ampXTimeSum = 0
@@ -229,24 +230,25 @@ def CalculateLogAttackTime(args, windowLength = 64, hopsize = 32, threshold = 0.
     else:
         return 0
 
-# Calculates time between the peak of impulse and it decaying below the value of max*ratio
-def CalculateDecayTime(args, windowLength = 128, hopsize = 64, ratio = 0.05):
+# Calculates time between the peak of impulse and it decaying below the value of max-threshold in dB
+def CalculateDecayTime(args, windowLength = 128, hopsize = 64, threshold = 20):
     envelope = iracema.features.peak_envelope(args.impulseIRA, windowLength, hopsize)
+    envelope.data = 10 * np.log10(abs(envelope.data))
     maxEnv = max(envelope.data)
 
-    plt.plot(envelope.data)
+    #plt.plot(envelope.data)
     #plt.show()
 
     peakTime = 0
     decayTime = 0
     flag = False
 
-    for i in range(0,len(envelope.data)):
+    for i in range(0, len(envelope.data)):
         if envelope.data[i] == maxEnv:
             peakTime = envelope.time[i]
             flag = True
 
-        if (maxEnv * ratio > envelope.data[i]) & flag:
+        if (maxEnv - threshold > envelope.data[i]) & flag:
             decayTime = envelope.time[i] - peakTime
             break
     return decayTime

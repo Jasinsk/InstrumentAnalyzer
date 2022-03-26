@@ -6,13 +6,13 @@ import matplotlib.pyplot as plt
 def DrawSpectrum(frequencies, spectrum, maxValue, startTime, endTime):
     plt.plot(frequencies, spectrum, color='k')
     plt.locator_params(nbins=4)
-    plt.xlim([0, 2000])
+    plt.xlim([0, 4000])
     #plt.ylim([10e-12, maxValue * 1.1])
     plt.xlabel('f [Hz]', fontsize=32)
     plt.xticks(fontsize=21)
     #plt.ticklabel_format(useMathText=True, scilimits=(0, 0))
     plt.yticks(fontsize=17)
-    plt.ylim([-69, -20])
+    plt.ylim([-80, -20])
     plt.title(str(startTime) + ' - ' + str(endTime) + ' [s]', fontsize=25)
     plt.grid(linewidth=1, which='both')
     # plt.yscale("log")
@@ -56,7 +56,7 @@ def run(inputDirectory, outputDirectory, fileNameAppendix, spectrumFileName, att
         print("Outputing to: " + seriesNames)
 
         figure = plt.gcf()
-        figure.set_size_inches(19, 8)
+        figure.set_size_inches(20, 8)
 
         if vectorOutput_flag:
             plt.savefig(seriesNames + '.pdf', dpi=1200, format="pdf")

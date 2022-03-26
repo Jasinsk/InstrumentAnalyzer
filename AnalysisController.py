@@ -47,9 +47,9 @@ displayerOutputDirectory = "DisplayerOutputFolder"
 vectorOutput_flag = False
 
 # Decide which sections should be run
-analyses_flag = False
-parameter_displayer_flag = True
-spectrum_displayer_flag = True
+analyses_flag = True
+parameter_displayer_flag = False
+spectrum_displayer_flag = False
 # -----------------Running sections-------------------
 for comparisonGroup in os.listdir(os.fsencode(analyzerInputDirectory)):
 
