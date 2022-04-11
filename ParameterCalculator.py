@@ -194,7 +194,7 @@ def CalculateOERs(harmonicsData):
     return oers
 
 def CalculateRMS(args):
-    return np.sum(librosa.feature.rmse(args.impulseLIB))
+    return np.sum(librosa.feature.rms(args.impulseLIB))
 
 #Calculates the signals temporal centroid. Only takes into account signal over threshold to disguard silence.
 # Watch out when using signals of different lengths.

@@ -6,6 +6,7 @@ import iracema
 import shutil
 import csv
 import ParameterCalculator as pc
+#import crepe
 
 # This script accepts folders with individually parsed impulses and calculates an averaged spectrum for each directory.
 # The plots of these results are saved into the output directory.
@@ -103,7 +104,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             # iracema loading
             args.impulseIRA = iracema.Audio(impulseFileName)
             args.impulseFFT = iracema.spectral.fft(args.impulseIRA, window_size=2048, hop_size=1024)
-            args.pitch = iracema.pitch.hps(args.impulseFFT, minf0=50, maxf0=500)
+            args.pitch = iracema.pitch.expan_pitch(args.impulseFFT, minf0=50, maxf0=500)
             args.harmonicsIRA = iracema.harmonics.extract(args.impulseFFT, args.pitch)
             pitchesHz.append(np.median(args.pitch.data))
 
