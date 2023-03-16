@@ -5,6 +5,7 @@ import librosa as lbr
 import librosa.display
 import math
 import shutil
+import soundfile as sf
 import wave
 
 # This script takes .wav files that are recordings of impuls series and parses each individual impuls into a seperate file.
@@ -15,7 +16,7 @@ import wave
 def FindPeaks(signal, samplingRate, thresholdPercentage = 0.7, threshold = -1, reachBackTime = 0.1, reachAheadTime = 0.2):
     if threshold == -1:
         threshold = thresholdPercentage * np.amax(signal)
-    DetectedOffsets = librosa.onset.onset_detect(signal, samplingRate, backtrack=False, units="samples")
+    DetectedOffsets = librosa.onset.onset_detect(y = signal, sr = samplingRate, backtrack=False, units="samples")
     parsingIndicator = []
 
     for el in DetectedOffsets:
@@ -108,7 +109,7 @@ def WriteParsedImpulsesToFolder(impulses, sampleRate, outputDirectory, seriesDir
     os.mkdir(path)
     for i in range (0, len(impulses[:,0])):
         filename = path + "/" + seriesDirectory + "_" + str(i) + ".wav"
-        librosa.output.write_wav(filename, impulses[i,:], sampleRate)
+        sf.write(filename, impulses[i,:], sampleRate)
 
 
 # ----------------- Controls -------------------
@@ -119,16 +120,16 @@ outputDirectory = "ParserOutputFolder"
 # Peak detection
 #threshold = 1
 thresholdPercentage = 0.1
-minimalTimeDifference = 7
+minimalTimeDifference = 4
 
 # Impulse parsing
 attackTime = 0.1
-decayTime = 7
+decayTime = 4
 
 # Energy validation of impulses
-acceptableEnergyDeviation = 0.2
+acceptableEnergyDeviation = 1
 attackEnergyTime = 1
-attackEnergyDeviation = 0.2
+attackEnergyDeviation = 1
 
 # Show figures of found peaks to check correct working
 showFoundPeaks_Flag = True

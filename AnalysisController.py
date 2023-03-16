@@ -11,8 +11,8 @@ parameterFileName = "ParameterData"
 spectrumFileName = "SpectrumData"
 
 # The impulse is cut into three parts, beginning-attackTime, attackTime-sustainTime, sustainTime-end [s]
-attackCutTime = 0.3
-sustainCutTime = 1.3
+attackCutTime = 1
+sustainCutTime = 3
 
 # Flags used to decide which parameters will be calculated
 centroid_flag = True
@@ -47,26 +47,27 @@ displayerOutputDirectory = "DisplayerOutputFolder"
 vectorOutput_flag = False
 
 # Decide which sections should be run
-analyses_flag = True
+analyses_flag = False
 parameter_displayer_flag = False
-spectrum_displayer_flag = False
+spectrum_displayer_flag = True
 # -----------------Running sections-------------------
 for comparisonGroup in os.listdir(os.fsencode(analyzerInputDirectory)):
 
-    comparisonFolderName = analyzerInputDirectory + "/" + os.fsdecode(comparisonGroup)
-    comparisonOutputDirectory = analyzerOutputDirectory + "/" + os.fsdecode(comparisonGroup)
+    if os.fsdecode(comparisonGroup) != ".DS_Store": # ignore MacOS system files
+        comparisonFolderName = analyzerInputDirectory + "/" + os.fsdecode(comparisonGroup)
+        comparisonOutputDirectory = analyzerOutputDirectory + "/" + os.fsdecode(comparisonGroup)
 
-    if analyses_flag:
-        ImpulseAnalyzer.run(comparisonFolderName, comparisonOutputDirectory, parameterFileName, spectrumFileName,
-            os.fsdecode(comparisonGroup), attackCutTime, sustainCutTime, centroid_flag, f0normCentroid_flag, rolloff_flag,
-            bandwidth_flag, spread_flag, flux_flag, irregularity_flag, highLowEnergy_flag, subBandFlux_flag, tristimulus_flag,
-            inharmonicity_flag, noisiness_flag, oddeven_flag, tuning_flag, crossingRate_flag, rms_flag, entropy_flag,
-            temporalCentroid_flag, logAttackTime_flag, decayTime_flag, mfcc_flag)
+        if analyses_flag:
+            ImpulseAnalyzer.run(comparisonFolderName, comparisonOutputDirectory, parameterFileName, spectrumFileName,
+                os.fsdecode(comparisonGroup), attackCutTime, sustainCutTime, centroid_flag, f0normCentroid_flag, rolloff_flag,
+                bandwidth_flag, spread_flag, flux_flag, irregularity_flag, highLowEnergy_flag, subBandFlux_flag, tristimulus_flag,
+                inharmonicity_flag, noisiness_flag, oddeven_flag, tuning_flag, crossingRate_flag, rms_flag, entropy_flag,
+                temporalCentroid_flag, logAttackTime_flag, decayTime_flag, mfcc_flag)
 
-    if parameter_displayer_flag:
-        ParameterDisplayer.run(comparisonOutputDirectory, comparisonOutputDirectory, os.fsdecode(comparisonGroup),
-                               parameterFileName, vectorOutput_flag)
+        if parameter_displayer_flag:
+            ParameterDisplayer.run(comparisonOutputDirectory, comparisonOutputDirectory, os.fsdecode(comparisonGroup),
+                                   parameterFileName, vectorOutput_flag)
 
-    if spectrum_displayer_flag:
-        SpectrumDisplayer.run(comparisonOutputDirectory, comparisonOutputDirectory, os.fsdecode(comparisonGroup),
-                               spectrumFileName, attackCutTime, sustainCutTime, vectorOutput_flag)
+        if spectrum_displayer_flag:
+            SpectrumDisplayer.run(comparisonOutputDirectory, comparisonOutputDirectory, os.fsdecode(comparisonGroup),
+                                   spectrumFileName, attackCutTime, sustainCutTime, vectorOutput_flag)

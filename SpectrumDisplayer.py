@@ -5,17 +5,17 @@ import matplotlib.pyplot as plt
 
 def DrawSpectrum(frequencies, spectrum, maxValue, startTime, endTime):
     plt.plot(frequencies, spectrum, color='k')
-    plt.locator_params(nbins=4)
-    plt.xlim([0, 4000])
+    plt.locator_params(nbins=40)
+    plt.xlim([0, 10000])
     #plt.ylim([10e-12, maxValue * 1.1])
     plt.xlabel('f [Hz]', fontsize=32)
-    plt.xticks(fontsize=21)
+    plt.xticks(fontsize=10)
     #plt.ticklabel_format(useMathText=True, scilimits=(0, 0))
     plt.yticks(fontsize=17)
     plt.ylim([-80, -20])
-    plt.title(str(startTime) + ' - ' + str(endTime) + ' [s]', fontsize=25)
+    #plt.title(str(startTime) + ' - ' + str(endTime) + ' [s]', fontsize=25)
     plt.grid(linewidth=1, which='both')
-    # plt.yscale("log")
+    #plt.yscale("log")
     # plt.text(1500, maxDecay, str('Energy = ' + str(CalculateRMS(allDecaySpectrums[iterator]))))
 
 def run(inputDirectory, outputDirectory, fileNameAppendix, spectrumFileName, attackTime, sustainTime, vectorOutput_flag):
@@ -44,14 +44,14 @@ def run(inputDirectory, outputDirectory, fileNameAppendix, spectrumFileName, att
         kSustainFrequencies = allSustainFrequencies/1000
         kDecayFrequencies = allDecayFrequencies/1000
 
-        plt.subplot(131)
+        #plt.subplot(131)
         #plt.ylabel("Magnitude [dB FS]", fontsize = 32)
-        plt.ylabel("Amplituda [dB FS]", fontsize = 32)
+        plt.ylabel("Amplituda [dB]", fontsize = 32)
         DrawSpectrum(scalingFactor * allAttackFrequencies, allAttackSpectrums, maxAttack, '0', attackTime)
-        plt.subplot(132)
-        DrawSpectrum(scalingFactor * allSustainFrequencies, allSustainSpectrums, maxSustain, attackTime, sustainTime)
-        plt.subplot(133)
-        DrawSpectrum(scalingFactor * allDecayFrequencies, allDecaySpectrums, maxDecay, sustainTime, round(impulseTime, 2))
+        #plt.subplot(132)
+        #DrawSpectrum(scalingFactor * allSustainFrequencies, allSustainSpectrums, maxSustain, attackTime, sustainTime)
+        #plt.subplot(133)
+        #DrawSpectrum(scalingFactor * allDecayFrequencies, allDecaySpectrums, maxDecay, sustainTime, round(impulseTime, 2))
 
         print("Outputing to: " + seriesNames)
 

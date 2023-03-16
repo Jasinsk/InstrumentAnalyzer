@@ -42,9 +42,11 @@ def run(inputDirectory, outputDirectory, fileNameAppendix, dataFileName, vectorO
                 #           fontsize=9, rotation=90)
                 #plt.xticks([0, 1, 2, 3, 4, 5, 6, 7], ["pusta", "1 b", "1 s", "2 b", "2 s", "3 b", "3 s", "13"], fontsize=9, rotation=0)
 
-                plt.xticks([0, 1, 2, 3, 4, 5],
-                           ['wn', 'a-2,d-8', 'a-0,5,d-9,5', 'a-1,d-9', 'a-1,d-1', 'guitar'], fontsize=9, rotation=90)
+                #plt.xticks([0, 1, 2, 3, 4, 5],
+                #           ['wn', 'a-2,d-8', 'a-0,5,d-9,5', 'a-1,d-9', 'a-1,d-1', 'guitar'], fontsize=9, rotation=90)
 
+                plt.xticks([0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+                           ['Alder 1', 'Alder 1.1', 'Alder 1.1 - repeat', 'Alder 2', 'Pine 1', 'Pine 2', 'Pine 3', 'Zebrano 1', 'Zebrano 1.1', 'Zebrano 2'], fontsize=9, rotation=90)
 
                 # assigning proper y axis labels to graphs
                 if (parameterName == "Spectrum Centroid" or parameterName == "Bandwidth" or parameterName == "Rolloff"):

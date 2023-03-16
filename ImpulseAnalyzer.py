@@ -27,6 +27,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     # clear output folder
     if os.path.isdir(outputDirectory):
             shutil.rmtree(outputDirectory)
+    print(outputDirectory)
     os.mkdir(outputDirectory)
     samplingRate = 0
 
@@ -75,175 +76,176 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
 
     # ---------------Calculating spectrums and parameters------------------
     for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
-        seriesDirectory = inputDirectory + "/" + os.fsdecode(seriesDirectory)
-        print("Entering folder: " + seriesDirectory)
-        impulses, attackSpectrums, sustainSpectrums, decaySpectrums, centroids, f0normCentroids, rolloffs, bandwidths, \
-        spreads, fluxes, irregularities, highLowEnergies, subBandFluxes1, subBandFluxes2, subBandFluxes3, subBandFluxes4, subBandFluxes5, \
-        subBandFluxes6, subBandFluxes7, subBandFluxes8, subBandFluxes9, subBandFluxes10, \
-        tristimulus1s, tristimulus2s, tristimulus3s, inharmonicities, noisinesses, \
-        oddEvenRatios, tunings, crossingRates, rmss, entropies, temporalCentroids, logAttackTimes, decayTimes, \
-        mfcc1_means, mfcc1_stddevs, mfcc2_means, mfcc2_stddevs, mfcc3_means, mfcc3_stddevs, mfcc4_means, mfcc4_stddevs, \
-         pitchesHz =  [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], \
-                      [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], \
-                      [], [], [], []
+        if os.fsdecode(seriesDirectory) != ".DS_Store": # ignore MacOS system files
+            seriesDirectory = inputDirectory + "/" + os.fsdecode(seriesDirectory)
+            print("Entering folder: " + seriesDirectory)
+            impulses, attackSpectrums, sustainSpectrums, decaySpectrums, centroids, f0normCentroids, rolloffs, bandwidths, \
+            spreads, fluxes, irregularities, highLowEnergies, subBandFluxes1, subBandFluxes2, subBandFluxes3, subBandFluxes4, subBandFluxes5, \
+            subBandFluxes6, subBandFluxes7, subBandFluxes8, subBandFluxes9, subBandFluxes10, \
+            tristimulus1s, tristimulus2s, tristimulus3s, inharmonicities, noisinesses, \
+            oddEvenRatios, tunings, crossingRates, rmss, entropies, temporalCentroids, logAttackTimes, decayTimes, \
+            mfcc1_means, mfcc1_stddevs, mfcc2_means, mfcc2_stddevs, mfcc3_means, mfcc3_stddevs, mfcc4_means, mfcc4_stddevs, \
+             pitchesHz =  [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], \
+                          [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], \
+                          [], [], [], []
 
-        # If harmonic data and normalized centroids make no sense it may be caused by improper fundumental pitch detection.
-        # Check in parameterData.csv whether the fundumentals were properly found.
-        # If not, then manually add the correct pitch below and rerun the offending sounds.
-        fundumentalPitch =  0 #523.26 #261.63
+            # If harmonic data and normalized centroids make no sense it may be caused by improper fundumental pitch detection.
+            # Check in parameterData.csv whether the fundumentals were properly found.
+            # If not, then manually add the correct pitch below and rerun the offending sounds.
+            fundumentalPitch =  82.41 #523.26 #261.63
 
-        for impulseFile in os.listdir(os.fsencode(seriesDirectory)):
-            impulseFileName = seriesDirectory + "/" + os.fsdecode(impulseFile)
-            args = Arguments()
-            args.fundumentalPitch = fundumentalPitch
-            # librosa loading
-            print("Loading file: " + impulseFileName)
-            args.impulseLIB, samplingRate = librosa.load(impulseFileName, sr=48000)
-            # Audio Samples are resampled to 48kHz to not cause problems for sub-band filtering and mfcc calculation
+            for impulseFile in os.listdir(os.fsencode(seriesDirectory)):
+                impulseFileName = seriesDirectory + "/" + os.fsdecode(impulseFile)
+                args = Arguments()
+                args.fundumentalPitch = fundumentalPitch
+                # librosa loading
+                print("Loading file: " + impulseFileName)
+                args.impulseLIB, samplingRate = librosa.load(impulseFileName, sr=48000)
+                # Audio Samples are resampled to 48kHz to not cause problems for sub-band filtering and mfcc calculation
 
-            # iracema loading
-            args.impulseIRA = iracema.Audio(impulseFileName)
-            args.impulseFFT = iracema.spectral.fft(args.impulseIRA, window_size=2048, hop_size=1024)
-            args.pitch = iracema.pitch.expan_pitch(args.impulseFFT, minf0=50, maxf0=500)
-            args.harmonicsIRA = iracema.harmonics.extract(args.impulseFFT, args.pitch)
-            pitchesHz.append(np.median(args.pitch.data))
+                # iracema loading
+                args.impulseIRA = iracema.Audio(impulseFileName)
+                args.impulseFFT = iracema.spectral.fft(args.impulseIRA, window_size=2048, hop_size=1024)
+                args.pitch = iracema.pitch.expan_pitch(args.impulseFFT, minf0=50, maxf0=500)
+                args.harmonicsIRA = iracema.harmonics.extract(args.impulseFFT, args.pitch)
+                pitchesHz.append(np.median(args.pitch.data))
 
-            if centroid_flag:
-                centroids.append(np.mean(librosa.feature.spectral_centroid(args.impulseLIB, sr=samplingRate)))
-            if f0normCentroid_flag:
-                if fundumentalPitch == 0:
-                    f0normCentroids.append((np.mean(librosa.feature.spectral_centroid(args.impulseLIB, sr=samplingRate) / np.median(args.pitch.data))))
-                else:
-                    f0normCentroids.append((np.mean(librosa.feature.spectral_centroid(args.impulseLIB, sr=samplingRate) / fundumentalPitch)))
-            if rolloff_flag:
-                rolloffs.append(np.mean(librosa.feature.spectral_rolloff(args.impulseLIB, sr=samplingRate)))
-            if bandwidth_flag:
-                bandwidths.append(np.mean(librosa.feature.spectral_bandwidth(args.impulseLIB, sr=samplingRate)))
-            if spread_flag:
-                spreads.append(np.mean(iracema.features.spectral_spread(args.impulseFFT).data))
-            if flux_flag:
-                fluxes.append(np.mean(iracema.features.spectral_flux(args.impulseFFT).data).real)
-            if subBandFlux_flag:
-                subBandFlux = pc.CalculateSubBandSpectralFlux(args, samplingRate)
-                subBandFluxes1.append(subBandFlux[0])
-                subBandFluxes2.append(subBandFlux[1])
-                subBandFluxes3.append(subBandFlux[2])
-                subBandFluxes4.append(subBandFlux[3])
-                subBandFluxes5.append(subBandFlux[4])
-                subBandFluxes6.append(subBandFlux[5])
-                subBandFluxes7.append(subBandFlux[6])
-                subBandFluxes8.append(subBandFlux[7])
-                if samplingRate > 22500:
-                    subBandFluxes9.append(subBandFlux[8])
-                if samplingRate > 45000:
-                    subBandFluxes10.append(subBandFlux[9])
-            if tuning_flag:
-                tunings.append(np.mean(librosa.estimate_tuning(args.impulseLIB, sr=samplingRate)))
-            if crossingRate_flag:
-                crossingRates.append(np.mean(librosa.feature.zero_crossing_rate(args.impulseLIB)))
-            if rms_flag:
-                rmss.append(pc.CalculateRMS(args))
-            if entropy_flag:
-                entropies.append(np.mean(iracema.features.spectral_entropy(args.impulseFFT).data))
-            if temporalCentroid_flag:
-                temporalCentroids.append(pc.CalculateTemporalCentroid(args))
-            if logAttackTime_flag:
-                logAttackTimes.append(pc.CalculateLogAttackTime(args))
-            if decayTime_flag:
-                decayTimes.append(pc.CalculateDecayTime(args))
-            if mfcc_flag:
-                mfccs = librosa.feature.mfcc(args.impulseLIB, sr=samplingRate, n_mfcc=4)
-                mfcc1_means.append(np.mean(mfccs[0]))
-                mfcc1_stddevs.append(np.std(mfccs[0]))
-                mfcc2_means.append(np.mean(mfccs[1]))
-                mfcc2_stddevs.append(np.std(mfccs[1]))
-                mfcc3_means.append(np.mean(mfccs[2]))
-                mfcc3_stddevs.append(np.std(mfccs[2]))
-                mfcc4_means.append(np.mean(mfccs[3]))
-                mfcc4_stddevs.append(np.std(mfccs[3]))
-            impulses = pc.InsertIntoVstack(args.impulseLIB, impulses)
+                if centroid_flag:
+                    centroids.append(np.mean(librosa.feature.spectral_centroid(args.impulseLIB, sr=samplingRate)))
+                if f0normCentroid_flag:
+                    if fundumentalPitch == 0:
+                        f0normCentroids.append((np.mean(librosa.feature.spectral_centroid(args.impulseLIB, sr=samplingRate) / np.median(args.pitch.data))))
+                    else:
+                        f0normCentroids.append((np.mean(librosa.feature.spectral_centroid(args.impulseLIB, sr=samplingRate) / fundumentalPitch)))
+                if rolloff_flag:
+                    rolloffs.append(np.mean(librosa.feature.spectral_rolloff(args.impulseLIB, sr=samplingRate)))
+                if bandwidth_flag:
+                    bandwidths.append(np.mean(librosa.feature.spectral_bandwidth(args.impulseLIB, sr=samplingRate)))
+                if spread_flag:
+                    spreads.append(np.mean(iracema.features.spectral_spread(args.impulseFFT).data))
+                if flux_flag:
+                    fluxes.append(np.mean(iracema.features.spectral_flux(args.impulseFFT).data).real)
+                if subBandFlux_flag:
+                    subBandFlux = pc.CalculateSubBandSpectralFlux(args, samplingRate)
+                    subBandFluxes1.append(subBandFlux[0])
+                    subBandFluxes2.append(subBandFlux[1])
+                    subBandFluxes3.append(subBandFlux[2])
+                    subBandFluxes4.append(subBandFlux[3])
+                    subBandFluxes5.append(subBandFlux[4])
+                    subBandFluxes6.append(subBandFlux[5])
+                    subBandFluxes7.append(subBandFlux[6])
+                    subBandFluxes8.append(subBandFlux[7])
+                    if samplingRate > 22500:
+                        subBandFluxes9.append(subBandFlux[8])
+                    if samplingRate > 45000:
+                        subBandFluxes10.append(subBandFlux[9])
+                if tuning_flag:
+                    tunings.append(np.mean(librosa.estimate_tuning(args.impulseLIB, sr=samplingRate)))
+                if crossingRate_flag:
+                    crossingRates.append(np.mean(librosa.feature.zero_crossing_rate(args.impulseLIB)))
+                if rms_flag:
+                    rmss.append(pc.CalculateRMS(args))
+                if entropy_flag:
+                    entropies.append(np.mean(iracema.features.spectral_entropy(args.impulseFFT).data))
+                if temporalCentroid_flag:
+                    temporalCentroids.append(pc.CalculateTemporalCentroid(args))
+                if logAttackTime_flag:
+                    logAttackTimes.append(pc.CalculateLogAttackTime(args))
+                if decayTime_flag:
+                    decayTimes.append(pc.CalculateDecayTime(args))
+                if mfcc_flag:
+                    mfccs = librosa.feature.mfcc(args.impulseLIB, sr=samplingRate, n_mfcc=4)
+                    mfcc1_means.append(np.mean(mfccs[0]))
+                    mfcc1_stddevs.append(np.std(mfccs[0]))
+                    mfcc2_means.append(np.mean(mfccs[1]))
+                    mfcc2_stddevs.append(np.std(mfccs[1]))
+                    mfcc3_means.append(np.mean(mfccs[2]))
+                    mfcc3_stddevs.append(np.std(mfccs[2]))
+                    mfcc4_means.append(np.mean(mfccs[3]))
+                    mfcc4_stddevs.append(np.std(mfccs[3]))
+                impulses = pc.InsertIntoVstack(args.impulseLIB, impulses)
 
-        fullFrequencies, fullSpectrums, attackFrequencies, attackSpectrums, sustainFrequencies, sustainSpectrums, \
-        decayFrequencies, decaySpectrums = pc.CalculateFFTs(impulses, samplingRate, attackTime, sustainTime)
+            fullFrequencies, fullSpectrums, attackFrequencies, attackSpectrums, sustainFrequencies, sustainSpectrums, \
+            decayFrequencies, decaySpectrums = pc.CalculateFFTs(impulses, samplingRate, attackTime, sustainTime)
 
-        if fundumentalPitch == 0:
-            fundumentalPitch = np.median(pitchesHz)
-        foundFundumentalPitches.append(fundumentalPitch)
-        mathHarmFreq = pc.CreateMathematicalHarmonicFrequencyVector(fundumentalPitch, n=20)
-        harmonicData = pc.ExtractHarmonicDataFromSpectrums(fullSpectrums, fullFrequencies, mathHarmFreq, bufforInHZ=20)
+            if fundumentalPitch == 0:
+                fundumentalPitch = np.median(pitchesHz)
+            foundFundumentalPitches.append(fundumentalPitch)
+            mathHarmFreq = pc.CreateMathematicalHarmonicFrequencyVector(fundumentalPitch, n=20)
+            harmonicData = pc.ExtractHarmonicDataFromSpectrums(fullSpectrums, fullFrequencies, mathHarmFreq, bufforInHZ=20)
 
-        if noisiness_flag:
-            noisinesses = pc.CalculateNoisiness(fullSpectrums, fullFrequencies, harmonicData)
-        if highLowEnergy_flag:
-            highLowEnergies = pc.CalculateHighEnergyLowEnergyRatio(fullSpectrums, fullFrequencies)
-        if irregularity_flag:
-            irregularities = pc.CalculateIrregularity(harmonicData)
-        if tristimulus_flag:
-            tristimulus1s, tristimulus2s, tristimulus3s = pc.CalculateTristimulus(harmonicData)
-        if inharmonicity_flag:
-            inharmonicities = pc.CalculateInharmonicity(harmonicData)
-        if oddeven_flag:
-            oddEvenRatios = pc.CalculateOERs(harmonicData)
+            if noisiness_flag:
+                noisinesses = pc.CalculateNoisiness(fullSpectrums, fullFrequencies, harmonicData)
+            if highLowEnergy_flag:
+                highLowEnergies = pc.CalculateHighEnergyLowEnergyRatio(fullSpectrums, fullFrequencies)
+            if irregularity_flag:
+                irregularities = pc.CalculateIrregularity(harmonicData)
+            if tristimulus_flag:
+                tristimulus1s, tristimulus2s, tristimulus3s = pc.CalculateTristimulus(harmonicData)
+            if inharmonicity_flag:
+                inharmonicities = pc.CalculateInharmonicity(harmonicData)
+            if oddeven_flag:
+                oddEvenRatios = pc.CalculateOERs(harmonicData)
 
-        # Dividing spectrum data into segments
-        avrAttackSpectrum = pc.CalculateAverageVector(attackSpectrums)
-        avrSustainSpectrum = pc.CalculateAverageVector(sustainSpectrums)
-        avrDecaySpectrum = pc.CalculateAverageVector(decaySpectrums)
+            # Dividing spectrum data into segments
+            avrAttackSpectrum = pc.CalculateAverageVector(attackSpectrums)
+            avrSustainSpectrum = pc.CalculateAverageVector(sustainSpectrums)
+            avrDecaySpectrum = pc.CalculateAverageVector(decaySpectrums)
 
-        allAttackSpectrums.append(avrAttackSpectrum)
-        allSustainSpectrums.append(avrSustainSpectrum)
-        allDecaySpectrums.append(avrDecaySpectrum)
-        allAttackFrequencies.append(attackFrequencies)
-        allSustainFrequencies.append(sustainFrequencies)
-        allDecayFrequencies.append(decayFrequencies)
-        seriesNames.append(seriesDirectory)
-        impulseTime = len(impulses[0,:])/samplingRate
-        #maxAttack = max([maxAttack, max(avrAttackSpectrum)])
-        #maxSustain = max([maxSustain, max(avrSustainSpectrum)])
-        #maxDecay = max([maxDecay, max(avrDecaySpectrum)])
+            allAttackSpectrums.append(avrAttackSpectrum)
+            allSustainSpectrums.append(avrSustainSpectrum)
+            allDecaySpectrums.append(avrDecaySpectrum)
+            allAttackFrequencies.append(attackFrequencies)
+            allSustainFrequencies.append(sustainFrequencies)
+            allDecayFrequencies.append(decayFrequencies)
+            seriesNames.append(seriesDirectory)
+            impulseTime = len(impulses[0,:])/samplingRate
+            #maxAttack = max([maxAttack, max(avrAttackSpectrum)])
+            #maxSustain = max([maxSustain, max(avrSustainSpectrum)])
+            #maxDecay = max([maxDecay, max(avrDecaySpectrum)])
 
-        seriesName = seriesDirectory.replace(inputDirectory + "/", "")
-        series_names.append(seriesName)
+            seriesName = seriesDirectory.replace(inputDirectory + "/", "")
+            series_names.append(seriesName)
 
-        CalculateStatistics(centroids, centroid_values, centroid_deviations)
-        CalculateStatistics(f0normCentroids, f0NormalizedCentroid_values, f0NormalizedCentroid_deviations)
-        CalculateStatistics(rolloffs, rolloff_values, rolloff_deviations)
-        CalculateStatistics(bandwidths, bandwidth_values, bandwidth_deviation)
-        CalculateStatistics(spreads, spread_values, spread_deviations)
-        CalculateStatistics(fluxes, flux_values, flux_deviations)
-        CalculateStatistics(irregularities, irregularity_values, irregularity_deviations)
-        CalculateStatistics(highLowEnergies, highLowEnergy_values, highLowEnegry_deviations)
-        CalculateStatistics(subBandFluxes1, subBandFlux1_values, subBandFlux1_deviations)
-        CalculateStatistics(subBandFluxes2, subBandFlux2_values, subBandFlux2_deviations)
-        CalculateStatistics(subBandFluxes3, subBandFlux3_values, subBandFlux3_deviations)
-        CalculateStatistics(subBandFluxes4, subBandFlux4_values, subBandFlux4_deviations)
-        CalculateStatistics(subBandFluxes5, subBandFlux5_values, subBandFlux5_deviations)
-        CalculateStatistics(subBandFluxes6, subBandFlux6_values, subBandFlux6_deviations)
-        CalculateStatistics(subBandFluxes7, subBandFlux7_values, subBandFlux7_deviations)
-        CalculateStatistics(subBandFluxes8, subBandFlux8_values, subBandFlux8_deviations)
-        CalculateStatistics(subBandFluxes9, subBandFlux9_values, subBandFlux9_deviations)
-        CalculateStatistics(subBandFluxes10, subBandFlux10_values, subBandFlux10_deviations)
-        CalculateStatistics(tristimulus1s, tristimulus1_values, tristimulus1_deviations)
-        CalculateStatistics(tristimulus2s, tristimulus2_values, tristimulus2_deviations)
-        CalculateStatistics(tristimulus3s, tristimulus3_values, tristimulus3_deviations)
-        CalculateStatistics(inharmonicities, inharmonicity_values, inharmonicity_deviations)
-        CalculateStatistics(noisinesses, noisiness_values, noisiness_deviations)
-        CalculateStatistics(oddEvenRatios, oddEvenRatio_values, oddEvenRatio_deviations)
-        CalculateStatistics(tunings, tuning_values, tuning_deviations)
-        CalculateStatistics(crossingRates, zeroCrossingRate_values, zeroCrossingRate_deviations)
-        CalculateStatistics(rmss, rms_values, rms_deviations)
-        CalculateStatistics(entropies, entropy_values, entropy_deviations)
-        CalculateStatistics(temporalCentroids, temporalCentroid_values, temporalCentroid_deviations)
-        CalculateStatistics(logAttackTimes, logAttackTime_values, logAttackTime_deviations)
-        CalculateStatistics(decayTimes, decayTime_values, decayTime_deviations)
-        CalculateStatistics(mfcc1_means, mfcc1_means_values, mfcc1_means_deviations)
-        CalculateStatistics(mfcc1_stddevs, mfcc1_stddevs_values, mfcc1_stddevs_deviations)
-        CalculateStatistics(mfcc2_means, mfcc2_means_values, mfcc2_means_deviations)
-        CalculateStatistics(mfcc2_stddevs, mfcc2_stddevs_values, mfcc2_stddevs_deviations)
-        CalculateStatistics(mfcc3_means, mfcc3_means_values, mfcc3_means_deviations)
-        CalculateStatistics(mfcc3_stddevs, mfcc3_stddevs_values, mfcc3_stddevs_deviations)
-        CalculateStatistics(mfcc4_means, mfcc4_means_values, mfcc4_means_deviations)
-        CalculateStatistics(mfcc4_stddevs, mfcc4_stddevs_values, mfcc4_stddevs_deviations)
+            CalculateStatistics(centroids, centroid_values, centroid_deviations)
+            CalculateStatistics(f0normCentroids, f0NormalizedCentroid_values, f0NormalizedCentroid_deviations)
+            CalculateStatistics(rolloffs, rolloff_values, rolloff_deviations)
+            CalculateStatistics(bandwidths, bandwidth_values, bandwidth_deviation)
+            CalculateStatistics(spreads, spread_values, spread_deviations)
+            CalculateStatistics(fluxes, flux_values, flux_deviations)
+            CalculateStatistics(irregularities, irregularity_values, irregularity_deviations)
+            CalculateStatistics(highLowEnergies, highLowEnergy_values, highLowEnegry_deviations)
+            CalculateStatistics(subBandFluxes1, subBandFlux1_values, subBandFlux1_deviations)
+            CalculateStatistics(subBandFluxes2, subBandFlux2_values, subBandFlux2_deviations)
+            CalculateStatistics(subBandFluxes3, subBandFlux3_values, subBandFlux3_deviations)
+            CalculateStatistics(subBandFluxes4, subBandFlux4_values, subBandFlux4_deviations)
+            CalculateStatistics(subBandFluxes5, subBandFlux5_values, subBandFlux5_deviations)
+            CalculateStatistics(subBandFluxes6, subBandFlux6_values, subBandFlux6_deviations)
+            CalculateStatistics(subBandFluxes7, subBandFlux7_values, subBandFlux7_deviations)
+            CalculateStatistics(subBandFluxes8, subBandFlux8_values, subBandFlux8_deviations)
+            CalculateStatistics(subBandFluxes9, subBandFlux9_values, subBandFlux9_deviations)
+            CalculateStatistics(subBandFluxes10, subBandFlux10_values, subBandFlux10_deviations)
+            CalculateStatistics(tristimulus1s, tristimulus1_values, tristimulus1_deviations)
+            CalculateStatistics(tristimulus2s, tristimulus2_values, tristimulus2_deviations)
+            CalculateStatistics(tristimulus3s, tristimulus3_values, tristimulus3_deviations)
+            CalculateStatistics(inharmonicities, inharmonicity_values, inharmonicity_deviations)
+            CalculateStatistics(noisinesses, noisiness_values, noisiness_deviations)
+            CalculateStatistics(oddEvenRatios, oddEvenRatio_values, oddEvenRatio_deviations)
+            CalculateStatistics(tunings, tuning_values, tuning_deviations)
+            CalculateStatistics(crossingRates, zeroCrossingRate_values, zeroCrossingRate_deviations)
+            CalculateStatistics(rmss, rms_values, rms_deviations)
+            CalculateStatistics(entropies, entropy_values, entropy_deviations)
+            CalculateStatistics(temporalCentroids, temporalCentroid_values, temporalCentroid_deviations)
+            CalculateStatistics(logAttackTimes, logAttackTime_values, logAttackTime_deviations)
+            CalculateStatistics(decayTimes, decayTime_values, decayTime_deviations)
+            CalculateStatistics(mfcc1_means, mfcc1_means_values, mfcc1_means_deviations)
+            CalculateStatistics(mfcc1_stddevs, mfcc1_stddevs_values, mfcc1_stddevs_deviations)
+            CalculateStatistics(mfcc2_means, mfcc2_means_values, mfcc2_means_deviations)
+            CalculateStatistics(mfcc2_stddevs, mfcc2_stddevs_values, mfcc2_stddevs_deviations)
+            CalculateStatistics(mfcc3_means, mfcc3_means_values, mfcc3_means_deviations)
+            CalculateStatistics(mfcc3_stddevs, mfcc3_stddevs_values, mfcc3_stddevs_deviations)
+            CalculateStatistics(mfcc4_means, mfcc4_means_values, mfcc4_means_deviations)
+            CalculateStatistics(mfcc4_stddevs, mfcc4_stddevs_values, mfcc4_stddevs_deviations)
 
     # -----------------Saving results-------------------
     # Saving parameter data into .npy file
