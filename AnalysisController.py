@@ -12,7 +12,7 @@ spectrumFileName = "SpectrumData"
 
 # The impulse is cut into three parts, beginning-attackTime, attackTime-sustainTime, sustainTime-end [s]
 attackCutTime = 1
-sustainCutTime = 3
+sustainCutTime = 4
 
 # Flags used to decide which parameters will be calculated
 centroid_flag = True
@@ -51,7 +51,7 @@ analyses_flag = False
 parameter_displayer_flag = False
 spectrum_displayer_flag = True
 # -----------------Running sections-------------------
-for comparisonGroup in os.listdir(os.fsencode(analyzerInputDirectory)):
+for comparisonGroup in sorted(os.listdir(os.fsencode(analyzerInputDirectory))):
 
     if os.fsdecode(comparisonGroup) != ".DS_Store": # ignore MacOS system files
         comparisonFolderName = analyzerInputDirectory + "/" + os.fsdecode(comparisonGroup)

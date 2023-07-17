@@ -231,7 +231,7 @@ def CalculateLogAttackTime(args, windowLength = 64, hopsize = 32, threshold = 0.
         return 0
 
 # Calculates time between the peak of impulse and it decaying below the value of max-threshold in dB
-def CalculateDecayTime(args, windowLength = 128, hopsize = 64, threshold = 20):
+def CalculateDecayTime(args, windowLength = 2048, hopsize = 128, threshold = 15):
     envelope = iracema.features.peak_envelope(args.impulseIRA, windowLength, hopsize)
     envelope.data = 10 * np.log10(abs(envelope.data))
     maxEnv = max(envelope.data)

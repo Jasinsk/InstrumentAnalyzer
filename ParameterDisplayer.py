@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 def run(inputDirectory, outputDirectory, fileNameAppendix, dataFileName, vectorOutput_flag):
 
-        customFontsize = 17
+        customFontsize = 18
 
         dataArray = np.load(inputDirectory + '/' + dataFileName + '_' + fileNameAppendix + '.npy')
         seriesNames = dataArray[0,1:]
@@ -45,37 +45,47 @@ def run(inputDirectory, outputDirectory, fileNameAppendix, dataFileName, vectorO
                 #plt.xticks([0, 1, 2, 3, 4, 5],
                 #           ['wn', 'a-2,d-8', 'a-0,5,d-9,5', 'a-1,d-9', 'a-1,d-1', 'guitar'], fontsize=9, rotation=90)
 
-                plt.xticks([0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-                           ['Alder 1', 'Alder 1.1', 'Alder 1.1 - repeat', 'Alder 2', 'Pine 1', 'Pine 2', 'Pine 3', 'Zebrano 1', 'Zebrano 1.1', 'Zebrano 2'], fontsize=9, rotation=90)
+                #plt.xticks([0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+                #           ['Alder 1', 'Alder 1.1', 'Alder 1.1 - repeat', 'Alder 2', 'Pine 1', 'Pine 2', 'Pine 3', 'Zebrano 1', 'Zebrano 1.1', 'Zebrano 2'], fontsize=9, rotation=90)
+
+                #plt.xticks([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                #           ['0', '00', '1D', '1M', '1O','2D', '2M', '2O', '3D', '3M', '3O',], fontsize=9)
+
+                #plt.xticks([0, 1, 2, 3], ['No Modification', 'AVC in F14', 'AVC in K6', 'AVC in K6 with Phase Shift'], fontsize=12, rotation=0)
+
+                plt.xticks([0,1,2,3], ["100", "80", "60", "40"], fontsize=12)
 
                 # assigning proper y axis labels to graphs
                 if (parameterName == "Spectrum Centroid" or parameterName == "Bandwidth" or parameterName == "Rolloff"):
-                #        plt.ylabel('Frequency [Hz]', fontsize=customFontsize)
-                        plt.ylabel('Częstotliwość [Hz]', fontsize=customFontsize)
+                        plt.ylabel('Frequency [Hz]', fontsize=customFontsize)
+                        #plt.ylabel('Częstotliwość [Hz]', fontsize=customFontsize)
                 elif (
                         parameterName == "RMS" or parameterName == "Attack RMS" or parameterName == "Sustain RMS" or parameterName == "Decay RMS"):
                         plt.ylabel('RMS', fontsize=customFontsize)
                 elif (parameterName == "Tuning"):
-                        #plt.ylabel('Interval [cent]', fontsize=customFontsize)
-                        plt.ylabel('Interwał [cent]', fontsize=customFontsize)
+                        plt.ylabel('Interval [cent]', fontsize=customFontsize)
+                        #plt.ylabel('Interwał [cent]', fontsize=customFontsize)
                         values = values * 100
                         deviations = deviations * 100
                 elif (parameterName == "Decay Time"):
-                        #plt.ylabel('Time [s]', fontsize=customFontsize)
-                        plt.ylabel('Czas [s]', fontsize=customFontsize)
+                        plt.ylabel('Time [s]', fontsize=customFontsize)
+                        #plt.ylabel('Czas [s]', fontsize=customFontsize)
                 elif (parameterName == "Zero Crossing Rate"):
                         plt.ylabel('Rate', fontsize=customFontsize)
                 elif (parameterName == "Tristimulus 1" or parameterName == "Tristimulus 2" or parameterName == "Tristimulus 3"):
-                        plt.ylabel('', fontsize=customFontsize)
+                        plt.ylabel('Tristimulus 3', fontsize=customFontsize)
 
-                plt.errorbar(seriesNames, values, deviations, fmt='kD', ecolor='r', elinewidth=1.5, capsize=15)
+                plt.errorbar(seriesNames, values, deviations, fmt='kD', ecolor='r', elinewidth=2, capthick=2, capsize=15, markersize=9)
 
                 #plt.plot(seriesNames, values, 'ko')
                 #plt.title(parameterName)
-                plt.subplots_adjust(bottom=0.2)
+                plt.margins(0.03)
+                plt.subplots_adjust(bottom=0.15)
                 #plt.legend()
                 plt.grid(True)
-                plt.yticks(fontsize=12)
+                plt.yticks(fontsize=18)
+                plt.xticks(fontsize=22)
+                plt.xlabel('Sound Hole Diameter [mm]', fontsize=18)
 
                 # Saving graph
                 outputFile = outputDirectory + '/' + parameterName + '_' + fileNameAppendix

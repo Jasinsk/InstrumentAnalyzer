@@ -69,13 +69,13 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     ["MFCC 3 - mean"], ["MFCC 3 - mean deviations"], ["MFCC 3 - STDDEV"], ["MFCC 3 - STDDEV deviations"], \
     ["MFCC 4 - mean"], ["MFCC 4 - mean deviations"], ["MFCC 4 - STDDEV"], ["MFCC 4 - STDDEV deviations"], ["Average Found Fundumental Pitches"]
 
-    allAttackSpectrums, allSustainSpectrums, allDecaySpectrums, allAttackFrequencies, allSustainFrequencies, \
-            allDecayFrequencies, seriesNames = [], [], [], [], [], [], []
+    allAttackSpectrums, allSustainSpectrums, allDecaySpectrums, allFullSpectrums, allAttackFrequencies, allSustainFrequencies, \
+            allDecayFrequencies, allFullFrequencies, seriesNames = [], [], [], [], [], [], [], [], []
     # Spectrum scaling factors
     impulseTime, maxAttack, maxSustain, maxDecay = 0, 0, 0, 0
 
     # ---------------Calculating spectrums and parameters------------------
-    for seriesDirectory in os.listdir(os.fsencode(inputDirectory)):
+    for seriesDirectory in sorted(os.listdir(os.fsencode(inputDirectory))):
         if os.fsdecode(seriesDirectory) != ".DS_Store": # ignore MacOS system files
             seriesDirectory = inputDirectory + "/" + os.fsdecode(seriesDirectory)
             print("Entering folder: " + seriesDirectory)
@@ -94,7 +94,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             # If not, then manually add the correct pitch below and rerun the offending sounds.
             fundumentalPitch =  82.41 #523.26 #261.63
 
-            for impulseFile in os.listdir(os.fsencode(seriesDirectory)):
+            for impulseFile in sorted(os.listdir(os.fsencode(seriesDirectory))):
                 impulseFileName = seriesDirectory + "/" + os.fsdecode(impulseFile)
                 args = Arguments()
                 args.fundumentalPitch = fundumentalPitch
@@ -191,13 +191,16 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             avrAttackSpectrum = pc.CalculateAverageVector(attackSpectrums)
             avrSustainSpectrum = pc.CalculateAverageVector(sustainSpectrums)
             avrDecaySpectrum = pc.CalculateAverageVector(decaySpectrums)
+            avrFullSpectrum = pc.CalculateAverageVector(fullSpectrums)
 
             allAttackSpectrums.append(avrAttackSpectrum)
             allSustainSpectrums.append(avrSustainSpectrum)
             allDecaySpectrums.append(avrDecaySpectrum)
+            allFullSpectrums.append(avrFullSpectrum)
             allAttackFrequencies.append(attackFrequencies)
             allSustainFrequencies.append(sustainFrequencies)
             allDecayFrequencies.append(decayFrequencies)
+            allFullFrequencies.append(fullFrequencies)
             seriesNames.append(seriesDirectory)
             impulseTime = len(impulses[0,:])/samplingRate
             #maxAttack = max([maxAttack, max(avrAttackSpectrum)])
@@ -442,6 +445,10 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             dataWriter.writerow(allDecaySpectrums[iterator])
             dataWriter.writerow("Decay frequencies: ")
             dataWriter.writerow(allDecayFrequencies[iterator])
+            dataWriter.writerow("Full Spectrum: ")
+            dataWriter.writerow(allFullSpectrums[iterator])
+            dataWriter.writerow("Full frequencies: ")
+            dataWriter.writerow(allFullFrequencies[iterator])
 
     print("Spectrums saved to: " + spectrumFileName + '_' + fileNameAppendix)
 
@@ -451,7 +458,8 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         temp_array = [outputFile, allAttackSpectrums[iterator],
                                     allAttackFrequencies[iterator], allSustainSpectrums[iterator],
                                     allSustainFrequencies[iterator], allDecaySpectrums[iterator],
-                                    allDecayFrequencies[iterator]]
+                                    allDecayFrequencies[iterator], allFullSpectrums[iterator],
+                                    allFullFrequencies[iterator]]
 
         spectrum_array.append(temp_array)
 

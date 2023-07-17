@@ -119,17 +119,17 @@ outputDirectory = "ParserOutputFolder"
 
 # Peak detection
 #threshold = 1
-thresholdPercentage = 0.1
-minimalTimeDifference = 4
+thresholdPercentage = 0.3
+minimalTimeDifference = 28
 
 # Impulse parsing
-attackTime = 0.1
-decayTime = 4
+attackTime = 0.5
+decayTime = 30
 
 # Energy validation of impulses
-acceptableEnergyDeviation = 1
-attackEnergyTime = 1
-attackEnergyDeviation = 1
+acceptableEnergyDeviation = 3
+attackEnergyTime = 0
+attackEnergyDeviation = 3
 
 # Show figures of found peaks to check correct working
 showFoundPeaks_Flag = True
@@ -139,7 +139,7 @@ if os.path.isdir(outputDirectory):
         shutil.rmtree(outputDirectory)
 os.mkdir(outputDirectory)
 
-for seriesSignal in os.listdir(os.fsencode(inputDirectory)):
+for seriesSignal in sorted(os.listdir(os.fsencode(inputDirectory))):
     inputSignal = inputDirectory + "/" + os.fsdecode(seriesSignal)
     seriesDirectory = os.fsdecode(seriesSignal).rstrip('.wav')
 
