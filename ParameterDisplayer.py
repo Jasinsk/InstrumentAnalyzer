@@ -59,8 +59,13 @@ def run(inputDirectory, outputDirectory, fileNameAppendix, dataFileName, vectorO
                 if (parameterName == "Spectrum Centroid" or parameterName == "Bandwidth" or parameterName == "Rolloff"):
                         plt.ylabel('Frequency [Hz]', fontsize=customFontsize)
                         #plt.ylabel('Częstotliwość [Hz]', fontsize=customFontsize)
-                elif (
-                        parameterName == "RMS" or parameterName == "Attack RMS" or parameterName == "Sustain RMS" or parameterName == "Decay RMS"):
+                elif (parameterName == "Roughness"):
+                        plt.ylabel('Roughness', fontsize=customFontsize)
+                elif (parameterName == "Loudness Max"):
+                        plt.ylabel('Maximum Loudness', fontsize=customFontsize)
+                elif (parameterName == "Loudness Avr"):
+                        plt.ylabel('Average Loudness', fontsize=customFontsize)
+                elif (parameterName == "RMS" or parameterName == "Attack RMS" or parameterName == "Sustain RMS" or parameterName == "Decay RMS"):
                         plt.ylabel('RMS', fontsize=customFontsize)
                 elif (parameterName == "Tuning"):
                         plt.ylabel('Interval [cent]', fontsize=customFontsize)

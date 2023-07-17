@@ -6,6 +6,7 @@ import iracema
 import shutil
 import csv
 import ParameterCalculator as pc
+import mosqito
 #import crepe
 
 # This script accepts folders with individually parsed impulses and calculates an averaged spectrum for each directory.
@@ -21,7 +22,7 @@ def CalculateStatistics(values, meanValues, deviations):
 
 def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fileNameAppendix, attackTime, sustainTime,
     centroid_flag, f0normCentroid_flag, rolloff_flag, bandwidth_flag, spread_flag, flux_flag, irregularity_flag, highLowEnergy_flag,
-    subBandFlux_flag, tristimulus_flag, inharmonicity_flag, noisiness_flag, oddeven_flag, tuning_flag, crossingRate_flag,
+    subBandFlux_flag, tristimulus_flag, inharmonicity_flag, noisiness_flag, oddeven_flag, roughness_flag, loudness_flag, tuning_flag, crossingRate_flag,
     rms_flag, entropy_flag, temporalCentroid_flag, logAttackTime_flag, decayTime_flag, mfcc_flag):
 
     # clear output folder
@@ -44,7 +45,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     tristimulus1_values, tristimulus1_deviations, tristimulus2_values, tristimulus2_deviations, \
     tristimulus3_values, tristimulus3_deviations, \
     inharmonicity_values, inharmonicity_deviations, noisiness_values, noisiness_deviations, \
-    oddEvenRatio_values, oddEvenRatio_deviations, tuning_values, tuning_deviations, \
+    oddEvenRatio_values, oddEvenRatio_deviations, roughness_values, roughness_deviations, loudnessMax_values, loudnessMax_deviations, loudnessAvr_values, loudnessAvr_deviations, tuning_values, tuning_deviations, \
     zeroCrossingRate_values, zeroCrossingRate_deviations, rms_values, rms_deviations, entropy_values, entropy_deviations, \
     temporalCentroid_values, temporalCentroid_deviations, logAttackTime_values, logAttackTime_deviations, \
     decayTime_values, decayTime_deviations, mfcc1_means_values, mfcc1_means_deviations, mfcc1_stddevs_values, mfcc1_stddevs_deviations, \
@@ -61,7 +62,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     ["Tristimulus 1"], ["Tristimulus 1 Deviations"], \
     ["Tristimulus 2"], ["Tristimulus 2 Deviations"], ["Tristimulus 3"], ["Tristimulus 3 Deviations"], \
     ["Inharmonicity"], ["Inharmonicity Deviation"], ["Noisiness"], ["Noisiness Deviations"], \
-    ["Odd-Even Ratio"], ["Odd-Even Ratio Deviation"], ["Tuning"], ["Tuning Deviation"], \
+    ["Odd-Even Ratio"], ["Odd-Even Ratio Deviation"], ["Roughness"], ["Roughness Deviation"], ["Loudness Max"], ["Loudness Max Deviation"], ["Loudness Avr"], ["Loudness Avr Deviation"], ["Tuning"], ["Tuning Deviation"], \
     ["Zero Crossing Rate"], ["Zero Crossing Rate Deviation"], ["RMS"], ["RMS Deviation"], ["Entropy"], ["Entropy Deviation"], \
     ["Temporal Centroid"], ["Temporal Centroid Deviations"], ["Log Attack Time"], ["Log Attack Time Deviations"], \
     ["Decay Time"], ["Decay Time Deviation"], ["MFCC 1 - mean"], ["MFCC 1 - mean deviations"], ["MFCC 1 - STDDEV"], ["MFCC 1 - STDDEV deviations"], \
@@ -83,11 +84,11 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             spreads, fluxes, irregularities, highLowEnergies, subBandFluxes1, subBandFluxes2, subBandFluxes3, subBandFluxes4, subBandFluxes5, \
             subBandFluxes6, subBandFluxes7, subBandFluxes8, subBandFluxes9, subBandFluxes10, \
             tristimulus1s, tristimulus2s, tristimulus3s, inharmonicities, noisinesses, \
-            oddEvenRatios, tunings, crossingRates, rmss, entropies, temporalCentroids, logAttackTimes, decayTimes, \
+            oddEvenRatios, roughnesses, loudnessesMax, loudnessesAvr, tunings, crossingRates, rmss, entropies, temporalCentroids, logAttackTimes, decayTimes, \
             mfcc1_means, mfcc1_stddevs, mfcc2_means, mfcc2_stddevs, mfcc3_means, mfcc3_stddevs, mfcc4_means, mfcc4_stddevs, \
              pitchesHz =  [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], \
                           [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], \
-                          [], [], [], []
+                          [], [], [], [], [], [], []
 
             # If harmonic data and normalized centroids make no sense it may be caused by improper fundumental pitch detection.
             # Check in parameterData.csv whether the fundumentals were properly found.
@@ -101,6 +102,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
                 # librosa loading
                 print("Loading file: " + impulseFileName)
                 args.impulseLIB, samplingRate = librosa.load(impulseFileName, sr=48000)
+                args.samplingRate = samplingRate
                 # Audio Samples are resampled to 48kHz to not cause problems for sub-band filtering and mfcc calculation
 
                 # iracema loading
@@ -139,6 +141,12 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
                         subBandFluxes9.append(subBandFlux[8])
                     if samplingRate > 45000:
                         subBandFluxes10.append(subBandFlux[9])
+                if roughness_flag:
+                    roughnesses.append(pc.CalculateRoughness(args))
+                if loudness_flag:
+                    loudnessMax, loudnessAvr = pc.CalculateLoudness(args)
+                    loudnessesMax.append(loudnessMax)
+                    loudnessesAvr.append(loudnessAvr)
                 if tuning_flag:
                     tunings.append(np.mean(librosa.estimate_tuning(args.impulseLIB, sr=samplingRate)))
                 if crossingRate_flag:
@@ -234,6 +242,9 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             CalculateStatistics(inharmonicities, inharmonicity_values, inharmonicity_deviations)
             CalculateStatistics(noisinesses, noisiness_values, noisiness_deviations)
             CalculateStatistics(oddEvenRatios, oddEvenRatio_values, oddEvenRatio_deviations)
+            CalculateStatistics(roughnesses, roughness_values, roughness_deviations)
+            CalculateStatistics(loudnessesMax, loudnessMax_values, loudnessMax_deviations)
+            CalculateStatistics(loudnessesAvr, loudnessAvr_values, loudnessAvr_deviations)
             CalculateStatistics(tunings, tuning_values, tuning_deviations)
             CalculateStatistics(crossingRates, zeroCrossingRate_values, zeroCrossingRate_deviations)
             CalculateStatistics(rmss, rms_values, rms_deviations)
@@ -292,6 +303,11 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         data_array = np.vstack((data_array, noisiness_values, noisiness_deviations))
     if oddeven_flag:
         data_array = np.vstack((data_array, oddEvenRatio_values, oddEvenRatio_deviations))
+    if roughness_flag:
+        data_array = np.vstack((data_array, roughness_values, roughness_deviations))
+    if loudness_flag:
+        data_array = np.vstack((data_array, loudnessMax_values, loudnessMax_deviations))
+        data_array = np.vstack((data_array, loudnessAvr_values, loudnessAvr_deviations))
     if tuning_flag:
         data_array = np.vstack((data_array, tuning_values, tuning_deviations))
     if crossingRate_flag:
@@ -385,6 +401,14 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         if oddeven_flag:
             dataWriter.writerow(oddEvenRatio_values)
             dataWriter.writerow(oddEvenRatio_deviations)
+        if roughness_flag:
+            dataWriter.writerow(roughness_values)
+            dataWriter.writerow(roughness_deviations)
+        if loudness_flag:
+            dataWriter.writerow(loudnessMax_values)
+            dataWriter.writerow(loudnessMax_deviations)
+            dataWriter.writerow(loudnessAvr_values)
+            dataWriter.writerow(loudnessAvr_deviations)
         if tuning_flag:
             dataWriter.writerow(tuning_values)
             dataWriter.writerow(tuning_deviations)

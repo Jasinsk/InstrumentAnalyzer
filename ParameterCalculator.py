@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import librosa
 import iracema
 import OctaveBandFilter as obf
+import mosqito
 
 # This file implements all function and calculations that are needed in the process of analysing impulses
 
@@ -192,6 +193,14 @@ def CalculateOERs(harmonicsData):
                 even += pow(take.amplitudes[i], 2)
         oers.append(odd/even)
     return oers
+
+def CalculateLoudness(args):
+    N, N_spec, bark_axis, time_axis = mosqito.loudness_zwtv(args.impulseLIB, args.samplingRate, field_type="free")
+    return max(N), np.mean(N)
+
+def CalculateRoughness(args):
+    r, r_spec, bark, time = mosqito.roughness_dw(args.impulseLIB, args.samplingRate)
+    return np.mean(r)
 
 def CalculateRMS(args):
     return np.sum(librosa.feature.rms(args.impulseLIB))
