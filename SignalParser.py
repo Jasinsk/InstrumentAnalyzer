@@ -53,7 +53,7 @@ def ParseImpulses(signal, samplingRate, peaks, attackTime = 0.05, decayTime = 7)
     for el in peaks:
         if el + decayTime * samplingRate < len(signal):
             impuls = signal[list(range(el - math.floor(attackTime * samplingRate), math.floor(el + decayTime * samplingRate)))]
-            if impulses == []: #Not very elegant
+            if len(impulses) == 0:
                 impulses = impuls
             else:
                 impulses = np.vstack([impulses, impuls])
@@ -120,16 +120,16 @@ outputDirectory = "ParserOutputFolder"
 # Peak detection
 #threshold = 1
 thresholdPercentage = 0.3
-minimalTimeDifference = 28
+minimalTimeDifference = 11
 
 # Impulse parsing
 attackTime = 0.5
-decayTime = 30
+decayTime = 10
 
-# Energy validation of impulses
-acceptableEnergyDeviation = 3
-attackEnergyTime = 0
-attackEnergyDeviation = 3
+# Energy validation of impulses (the lower the thresholds the more restrictive the selection)
+acceptableEnergyDeviation = 0.2
+attackEnergyTime = 3
+attackEnergyDeviation = 0.15
 
 # Show figures of found peaks to check correct working
 showFoundPeaks_Flag = True
