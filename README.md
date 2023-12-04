@@ -2,6 +2,9 @@
 Instrument Analyzer is a set of tools purpose build in Python to streamline the process of conducting comparative instrument analyses
 
 ## Setup
+
+```Python == 3.9```
+
 Instrument Analyzer requires the use of the Librosa package. At the time of writing there seems to be an issue with librosa installing on the build in virtual environment in PyCharm and VS19. 
 
 If such problems arise it is advised to follow these steps:
