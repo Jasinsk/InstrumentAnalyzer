@@ -1,7 +1,7 @@
 import ImpulseAnalyzer
 import ParameterDisplayer
 import SpectrumDisplayer
-import os
+from pathlib import Path
 
 # -----------------ImpulseAnalyzer Controls-------------------
 # Directories
@@ -12,32 +12,32 @@ spectrumFileName = "SpectrumData"
 
 # The impulse is cut into three parts, beginning-attackTime, attackTime-sustainTime, sustainTime-end [s]
 attackCutTime = 1
-sustainCutTime = 4
+sustainCutTime = 3
 
 # Flags used to decide which parameters will be calculated
-centroid_flag = False
-f0normCentroid_flag = False
-rolloff_flag = False
-bandwidth_flag = False
-spread_flag = False
-flux_flag = False
-irregularity_flag = False
-highLowEnergy_flag = False
-subBandFlux_flag = False
-tristimulus_flag = False
-inharmonicity_flag = False
-noisiness_flag = False
-oddeven_flag = False
+centroid_flag = True
+f0normCentroid_flag = True
+rolloff_flag = True
+bandwidth_flag = True
+spread_flag = True
+flux_flag = True
+irregularity_flag = True
+highLowEnergy_flag = True
+subBandFlux_flag = True
+tristimulus_flag = True
+inharmonicity_flag = True
+noisiness_flag = True
+oddeven_flag = True
 roughness_flag = True
 loudness_flag = True
-tuning_flag = False
-crossingRate_flag = False
+tuning_flag = True
+crossingRate_flag = True
 rms_flag = True
-entropy_flag = False
-temporalCentroid_flag = False
-logAttackTime_flag = False
-decayTime_flag= False
-mfcc_flag = False
+entropy_flag = True
+temporalCentroid_flag = True
+logAttackTime_flag = True
+decayTime_flag= True
+mfcc_flag = True
 
 # -----------------ParameterDisplayer Controls-------------------
 # Directories
@@ -50,26 +50,26 @@ vectorOutput_flag = False
 
 # Decide which sections should be run
 analyses_flag = False
-parameter_displayer_flag = True
+parameter_displayer_flag = False
 spectrum_displayer_flag = False
 # -----------------Running sections-------------------
-for comparisonGroup in sorted(os.listdir(os.fsencode(analyzerInputDirectory))):
+for comparisonGroup in sorted(Path(analyzerInputDirectory).iterdir()):
 
-    if os.fsdecode(comparisonGroup) != ".DS_Store": # ignore MacOS system files
-        comparisonFolderName = analyzerInputDirectory + "/" + os.fsdecode(comparisonGroup)
-        comparisonOutputDirectory = analyzerOutputDirectory + "/" + os.fsdecode(comparisonGroup)
+    if comparisonGroup.name != ".DS_Store": # ignore MacOS system files
+        comparisonFolderName = analyzerInputDirectory + "/" + comparisonGroup.name
+        comparisonOutputDirectory = analyzerOutputDirectory + "/" + comparisonGroup.name
 
         if analyses_flag:
             ImpulseAnalyzer.run(comparisonFolderName, comparisonOutputDirectory, parameterFileName, spectrumFileName,
-                os.fsdecode(comparisonGroup), attackCutTime, sustainCutTime, centroid_flag, f0normCentroid_flag, rolloff_flag,
+                comparisonGroup.name, attackCutTime, sustainCutTime, centroid_flag, f0normCentroid_flag, rolloff_flag,
                 bandwidth_flag, spread_flag, flux_flag, irregularity_flag, highLowEnergy_flag, subBandFlux_flag, tristimulus_flag,
                 inharmonicity_flag, noisiness_flag, oddeven_flag, roughness_flag, loudness_flag, tuning_flag, crossingRate_flag, rms_flag, entropy_flag,
                 temporalCentroid_flag, logAttackTime_flag, decayTime_flag, mfcc_flag)
 
         if parameter_displayer_flag:
-            ParameterDisplayer.run(comparisonOutputDirectory, comparisonOutputDirectory, os.fsdecode(comparisonGroup),
+            ParameterDisplayer.run(comparisonOutputDirectory, comparisonOutputDirectory, comparisonGroup.name,
                                    parameterFileName, vectorOutput_flag)
 
         if spectrum_displayer_flag:
-            SpectrumDisplayer.run(comparisonOutputDirectory, comparisonOutputDirectory, os.fsdecode(comparisonGroup),
+            SpectrumDisplayer.run(comparisonOutputDirectory, comparisonOutputDirectory, comparisonGroup.name,
                                    spectrumFileName, attackCutTime, sustainCutTime, vectorOutput_flag)

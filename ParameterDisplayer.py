@@ -27,10 +27,10 @@ def run(inputDirectory, outputDirectory, fileNameAppendix, dataFileName, vectorO
                 #plt.xticks([0, 1, 2], ['30', '50', '65'])
                 #plt.xticks([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], ['25', '30', '35', '40', '45', '50', '55', '60', '65', '70'])
                 #plt.xticks([0, 1, 2, 3], ['Sapele', 'Pine', 'Plywood', 'Rosewood'], fontsize=15, rotation=0)
-                #plt.xticks([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
-                #           ['wn', 'wn-100', 'wn-300', 'wn-1500', 'wn-1500-2oct', 'wn-1500-3oct', 'wn-6000', 'sine-440', 'sine-447',
-                #            'triangle-440', 'saw-440', 'sine-100,200,300,400', 'sine-100,210,320,390', 'a-2,d-8', 'a-0,5,d-9,5',
-                #            'a-1,d-9', 'a-1,d-1', 'guitar'], fontsize=9, rotation=90)
+                plt.xticks([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+                           ['wn', 'wn-100', 'wn-300', 'wn-1500', 'wn-1500-2oct', 'wn-1500-3oct', 'wn-6000', 'sine-440', 'sine-447',
+                            'triangle-440', 'saw-440', 'sine-100,200,300,400', 'sine-100,210,320,390', 'a-2,d-8', 'a-0,5,d-9,5',
+                            'a-1,d-9', 'a-1,d-1', 'guitar'], fontsize=9, rotation=90)
                 #plt.xticks([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17], ['klasyczna', 'elektryczna', 'fuzz', 'sitar',
                 #                                'koto', 'klawesyn', 'pianino', 'wibrafon', 'marimba', 'skrzypce', 'kontrabas', 'fletnia pana',
                 #                                'trabka', 'klarnet', 'organy', 'moog', 'FM', 'sinus + szum'], fontsize=8, rotation=90)
@@ -51,9 +51,13 @@ def run(inputDirectory, outputDirectory, fileNameAppendix, dataFileName, vectorO
                 #plt.xticks([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
                 #           ['0', '00', '1D', '1M', '1O','2D', '2M', '2O', '3D', '3M', '3O',], fontsize=9)
 
-                #plt.xticks([0, 1, 2, 3], ['No Modification', 'AVC in F14', 'AVC in K6', 'AVC in K6 with Phase Shift'], fontsize=12, rotation=0)
+                #plt.xticks([0, 1, 2, 3], ['No Modification', 'F14', 'K6', 'K6 with Phase Shift'], fontsize=10, rotation=0)
 
-                plt.xticks([0,1,2,3], ["100", "80", "60", "40"], fontsize=12)
+                #plt.xticks([0,1,2,3], ["100", "80", "60", "40"], fontsize=12)
+
+                #plt.xticks([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], ["Filc", "Guma", "Nylon 0.8 1", "Nylon 0.8 2", "Nylon 0.8 3", "Nylon 0.67", "Nylon 0.94", "Nylon 1.14", "Poliweglan", "Stal"], fontsize=9, rotation=45)
+
+                #plt.xticks([0,1,2,3], ["094", "114", "067", "080"])
 
                 # assigning proper y axis labels to graphs
                 if (parameterName == "Spectrum Centroid" or parameterName == "Bandwidth" or parameterName == "Rolloff"):
@@ -85,17 +89,17 @@ def run(inputDirectory, outputDirectory, fileNameAppendix, dataFileName, vectorO
                 #plt.plot(seriesNames, values, 'ko')
                 #plt.title(parameterName)
                 plt.margins(0.03)
-                plt.subplots_adjust(bottom=0.15)
+                plt.subplots_adjust(bottom=0.2)
                 #plt.legend()
                 plt.grid(True)
-                plt.yticks(fontsize=18)
-                plt.xticks(fontsize=22)
+                plt.yticks(fontsize=15)
+                plt.xticks(fontsize=17)
                 plt.xlabel('Sound Hole Diameter [mm]', fontsize=18)
 
                 # Saving graph
                 outputFile = outputDirectory + '/' + parameterName + '_' + fileNameAppendix
                 figure = plt.gcf()
-                figure.set_size_inches(9, 6)
+                figure.set_size_inches(14, 10)
 
                 if vectorOutput_flag:
                         plt.savefig(outputFile + '.pdf', dpi=1200, format="pdf")
