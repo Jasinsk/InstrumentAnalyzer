@@ -7,7 +7,7 @@ def run(inputDirectory, outputDirectory, fileNameAppendix, dataFileName, vectorO
 
         customFontsize = 18
 
-        dataArray = np.load(inputDirectory + '/' + dataFileName + '_' + fileNameAppendix + '.npy')
+        dataArray = np.load(f"{str(inputDirectory)}/{dataFileName}_{fileNameAppendix}.npy")
         seriesNames = dataArray[0,1:]
         dataArray = np.delete(dataArray, 0, 0)
         parameterNumber, sampleNumber = dataArray.shape
@@ -97,7 +97,7 @@ def run(inputDirectory, outputDirectory, fileNameAppendix, dataFileName, vectorO
                 plt.xlabel('Sound Hole Diameter [mm]', fontsize=18)
 
                 # Saving graph
-                outputFile = outputDirectory + '/' + parameterName + '_' + fileNameAppendix
+                outputFile = f"{str(outputDirectory)}/{parameterName}_{fileNameAppendix}"
                 figure = plt.gcf()
                 figure.set_size_inches(14, 10)
 

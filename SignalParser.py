@@ -1,12 +1,11 @@
 import numpy as np
-import os
 import matplotlib.pyplot as plt
 import librosa as lbr
 import librosa.display
 import math
 import shutil
 import soundfile as sf
-import wave
+from pathlib import Path
 
 # This script takes .wav files that are recordings of impuls series and parses each individual impuls into a seperate file.
 # Each recording put into the input folder is parsed into a seperate folder inside the output directory
@@ -105,10 +104,10 @@ def RemoveImpulsesWithEnergyDeviation(impulses, samplingRate, acceptableDeviatio
 
 #pushes impulses to files in a folder inside the output folder
 def WriteParsedImpulsesToFolder(impulses, sampleRate, outputDirectory, seriesDirectory):
-    path = outputDirectory + "/" + seriesDirectory
-    os.mkdir(path)
+    outputPath = outputDirectory + "/" + seriesDirectory
+    Path(outputPath).mkdir()
     for i in range (0, len(impulses[:,0])):
-        filename = path + "/" + seriesDirectory + "_" + str(i) + ".wav"
+        filename = outputPath + "/" + seriesDirectory + "_" + str(i) + ".wav"
         sf.write(filename, impulses[i,:], sampleRate)
 
 
@@ -120,11 +119,11 @@ outputDirectory = "ParserOutputFolder"
 # Peak detection
 #threshold = 1
 thresholdPercentage = 0.3
-minimalTimeDifference = 11
+minimalTimeDifference = 13
 
 # Impulse parsing
-attackTime = 0.5
-decayTime = 10
+attackTime = 0.2
+decayTime = 12
 
 # Energy validation of impulses (the lower the thresholds the more restrictive the selection)
 acceptableEnergyDeviation = 0.2
@@ -135,17 +134,16 @@ attackEnergyDeviation = 0.15
 showFoundPeaks_Flag = True
 # ---------------------------------------------
 
-if os.path.isdir(outputDirectory):
+if Path(outputDirectory).is_dir():
         shutil.rmtree(outputDirectory)
-os.mkdir(outputDirectory)
+Path(outputDirectory).mkdir()
 
-for seriesSignal in sorted(os.listdir(os.fsencode(inputDirectory))):
-    inputSignal = inputDirectory + "/" + os.fsdecode(seriesSignal)
-    seriesDirectory = os.fsdecode(seriesSignal).rstrip('.wav')
+for seriesPath in sorted(Path(inputDirectory).iterdir()):
+    seriesDirectory = seriesPath.stem.rstrip('.wav')
 
-    print("Entering: " + inputSignal)
+    print("Entering: " + seriesPath.name)
 
-    signal, samplingRate = lbr.load(inputSignal, sr=None)
+    signal, samplingRate = lbr.load(seriesPath, sr=None)
 
     foundPeaks = FindPeaks(signal, samplingRate, thresholdPercentage=thresholdPercentage)
     foundPeaks = RemoveDuplicatePeaks(foundPeaks, samplingRate, minimalTimeDifference, decayTime, len(signal))

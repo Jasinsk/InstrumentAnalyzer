@@ -20,10 +20,7 @@ def CalculateStatistics(values, meanValues, deviations):
     deviations.append(np.std(values))
     return 0
 
-def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fileNameAppendix, attackTime, sustainTime,
-    centroid_flag, f0normCentroid_flag, rolloff_flag, bandwidth_flag, spread_flag, flux_flag, irregularity_flag, highLowEnergy_flag,
-    subBandFlux_flag, tristimulus_flag, inharmonicity_flag, noisiness_flag, oddeven_flag, roughness_flag, loudness_flag, tuning_flag, crossingRate_flag,
-    rms_flag, entropy_flag, temporalCentroid_flag, logAttackTime_flag, decayTime_flag, mfcc_flag):
+def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fileNameAppendix, config):
 
     # clear output folder
     if Path(outputDirectory).is_dir():
@@ -78,8 +75,8 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     # ---------------Calculating spectrums and parameters------------------
     for seriesDirectory in sorted(Path(inputDirectory).iterdir()):
         if seriesDirectory.name != ".DS_Store": # ignore MacOS system files
-            seriesDirectory = inputDirectory + "/" + seriesDirectory.name
-            print("Entering folder: " + seriesDirectory)
+            seriesDirectory = Path(inputDirectory) / seriesDirectory.name
+            print("Entering folder: " + seriesDirectory.name)
             impulses, attackSpectrums, sustainSpectrums, decaySpectrums, centroids, f0normCentroids, rolloffs, bandwidths, \
             spreads, fluxes, irregularities, highLowEnergies, subBandFluxes1, subBandFluxes2, subBandFluxes3, subBandFluxes4, subBandFluxes5, \
             subBandFluxes6, subBandFluxes7, subBandFluxes8, subBandFluxes9, subBandFluxes10, \
@@ -96,38 +93,38 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             fundumentalPitch =  0 #82.41 #523.26 #261.63
 
             for impulseFile in sorted(Path(seriesDirectory).iterdir()):
-                impulseFileName = seriesDirectory + "/" + impulseFile.name
+                impulseFileName = Path(seriesDirectory) / impulseFile.name
                 args = Arguments()
                 args.fundumentalPitch = fundumentalPitch
                 # librosa loading
-                print("Loading file: " + impulseFileName)
+                print("Loading file: " + str(impulseFileName))
                 args.impulseLIB, samplingRate = librosa.load(impulseFileName, sr=48000)
                 args.samplingRate = samplingRate
                 # Audio Samples are resampled to 48kHz to not cause problems for sub-band filtering and mfcc calculation
 
                 # iracema loading
-                args.impulseIRA = iracema.Audio(impulseFileName)
+                args.impulseIRA = iracema.Audio(str(impulseFileName))
                 args.impulseFFT = iracema.spectral.fft(args.impulseIRA, window_size=2048, hop_size=1024)
                 args.pitch = iracema.pitch.expan_pitch(args.impulseFFT, minf0=50, maxf0=500)
                 args.harmonicsIRA = iracema.harmonics.extract(args.impulseFFT, args.pitch)
                 pitchesHz.append(np.median(args.pitch.data))
 
-                if centroid_flag:
+                if config.centroid_flag:
                     centroids.append(np.mean(librosa.feature.spectral_centroid(args.impulseLIB, sr=samplingRate)))
-                if f0normCentroid_flag:
+                if config.f0normCentroid_flag:
                     if fundumentalPitch == 0:
                         f0normCentroids.append((np.mean(librosa.feature.spectral_centroid(args.impulseLIB, sr=samplingRate) / np.median(args.pitch.data))))
                     else:
                         f0normCentroids.append((np.mean(librosa.feature.spectral_centroid(args.impulseLIB, sr=samplingRate) / fundumentalPitch)))
-                if rolloff_flag:
+                if config.rolloff_flag:
                     rolloffs.append(np.mean(librosa.feature.spectral_rolloff(args.impulseLIB, sr=samplingRate)))
-                if bandwidth_flag:
+                if config.bandwidth_flag:
                     bandwidths.append(np.mean(librosa.feature.spectral_bandwidth(args.impulseLIB, sr=samplingRate)))
-                if spread_flag:
+                if config.spread_flag:
                     spreads.append(np.mean(iracema.features.spectral_spread(args.impulseFFT).data))
-                if flux_flag:
+                if config.flux_flag:
                     fluxes.append(np.mean(iracema.features.spectral_flux(args.impulseFFT).data).real)
-                if subBandFlux_flag:
+                if config.subBandFlux_flag:
                     subBandFlux = pc.CalculateSubBandSpectralFlux(args, samplingRate)
                     subBandFluxes1.append(subBandFlux[0])
                     subBandFluxes2.append(subBandFlux[1])
@@ -141,27 +138,27 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
                         subBandFluxes9.append(subBandFlux[8])
                     if samplingRate > 45000:
                         subBandFluxes10.append(subBandFlux[9])
-                if roughness_flag:
+                if config.roughness_flag:
                     roughnesses.append(pc.CalculateRoughness(args))
-                if loudness_flag:
+                if config.loudness_flag:
                     loudnessMax, loudnessAvr = pc.CalculateLoudness(args)
                     loudnessesMax.append(loudnessMax)
                     loudnessesAvr.append(loudnessAvr)
-                if tuning_flag:
+                if config.tuning_flag:
                     tunings.append(np.mean(librosa.estimate_tuning(args.impulseLIB, sr=samplingRate)))
-                if crossingRate_flag:
+                if config.crossingRate_flag:
                     crossingRates.append(np.mean(librosa.feature.zero_crossing_rate(args.impulseLIB)))
-                if rms_flag:
+                if config.rms_flag:
                     rmss.append(pc.CalculateRMS(args))
-                if entropy_flag:
+                if config.entropy_flag:
                     entropies.append(np.mean(iracema.features.spectral_entropy(args.impulseFFT).data))
-                if temporalCentroid_flag:
+                if config.temporalCentroid_flag:
                     temporalCentroids.append(pc.CalculateTemporalCentroid(args))
-                if logAttackTime_flag:
+                if config.logAttackTime_flag:
                     logAttackTimes.append(pc.CalculateLogAttackTime(args))
-                if decayTime_flag:
+                if config.decayTime_flag:
                     decayTimes.append(pc.CalculateDecayTime(args))
-                if mfcc_flag:
+                if config.mfcc_flag:
                     mfccs = librosa.feature.mfcc(args.impulseLIB, sr=samplingRate, n_mfcc=4)
                     mfcc1_means.append(np.mean(mfccs[0]))
                     mfcc1_stddevs.append(np.std(mfccs[0]))
@@ -174,7 +171,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
                 impulses = pc.InsertIntoVstack(args.impulseLIB, impulses)
 
             fullFrequencies, fullSpectrums, attackFrequencies, attackSpectrums, sustainFrequencies, sustainSpectrums, \
-            decayFrequencies, decaySpectrums = pc.CalculateFFTs(impulses, samplingRate, attackTime, sustainTime)
+            decayFrequencies, decaySpectrums = pc.CalculateFFTs(impulses, samplingRate, config.attackCutTime, config.sustainCutTime)
 
             if fundumentalPitch == 0:
                 fundumentalPitch = np.median(pitchesHz)
@@ -182,17 +179,17 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             mathHarmFreq = pc.CreateMathematicalHarmonicFrequencyVector(fundumentalPitch, n=20)
             harmonicData = pc.ExtractHarmonicDataFromSpectrums(fullSpectrums, fullFrequencies, mathHarmFreq, bufforInHZ=20)
 
-            if noisiness_flag:
+            if config.noisiness_flag:
                 noisinesses = pc.CalculateNoisiness(fullSpectrums, fullFrequencies, harmonicData)
-            if highLowEnergy_flag:
+            if config.highLowEnergy_flag:
                 highLowEnergies = pc.CalculateHighEnergyLowEnergyRatio(fullSpectrums, fullFrequencies)
-            if irregularity_flag:
+            if config.irregularity_flag:
                 irregularities = pc.CalculateIrregularity(harmonicData)
-            if tristimulus_flag:
+            if config.tristimulus_flag:
                 tristimulus1s, tristimulus2s, tristimulus3s = pc.CalculateTristimulus(harmonicData)
-            if inharmonicity_flag:
+            if config.inharmonicity_flag:
                 inharmonicities = pc.CalculateInharmonicity(harmonicData)
-            if oddeven_flag:
+            if config.oddeven_flag:
                 oddEvenRatios = pc.CalculateOERs(harmonicData)
 
             # Dividing spectrum data into segments
@@ -209,7 +206,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             allSustainFrequencies.append(sustainFrequencies)
             allDecayFrequencies.append(decayFrequencies)
             allFullFrequencies.append(fullFrequencies)
-            seriesNames.append(seriesDirectory)
+            seriesNames.append(str(seriesDirectory))
             if len(impulses) == 1:
                 impulseTime = len(impulses[0]) / samplingRate
             else:
@@ -218,7 +215,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             #maxSustain = max([maxSustain, max(avrSustainSpectrum)])
             #maxDecay = max([maxDecay, max(avrDecaySpectrum)])
 
-            seriesName = seriesDirectory.replace(inputDirectory + "/", "")
+            seriesName = seriesDirectory.name
             series_names.append(seriesName)
 
             CalculateStatistics(centroids, centroid_values, centroid_deviations)
@@ -267,23 +264,23 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     # -----------------Saving results-------------------
     # Saving parameter data into .npy file
     data_array = series_names
-    if centroid_flag:
+    if config.centroid_flag:
         data_array = np.vstack((data_array, centroid_values, centroid_deviations))
-    if f0normCentroid_flag:
+    if config.f0normCentroid_flag:
         data_array = np.vstack((data_array, f0NormalizedCentroid_values, f0NormalizedCentroid_deviations))
-    if rolloff_flag:
+    if config.rolloff_flag:
         data_array = np.vstack((data_array, rolloff_values, rolloff_deviations))
-    if bandwidth_flag:
+    if config.bandwidth_flag:
         data_array = np.vstack((data_array, bandwidth_values, bandwidth_deviation))
-    if spread_flag:
+    if config.spread_flag:
         data_array = np.vstack((data_array, spread_values, spread_deviations))
-    if flux_flag:
+    if config.flux_flag:
         data_array = np.vstack((data_array, flux_values, flux_deviations))
-    if irregularity_flag:
+    if config.irregularity_flag:
         data_array = np.vstack((data_array, irregularity_values, irregularity_deviations))
-    if highLowEnergy_flag:
+    if config.highLowEnergy_flag:
         data_array = np.vstack((data_array, highLowEnergy_values, highLowEnegry_deviations))
-    if subBandFlux_flag:
+    if config.subBandFlux_flag:
         data_array = np.vstack((data_array, subBandFlux1_values, subBandFlux1_deviations))
         data_array = np.vstack((data_array, subBandFlux2_values, subBandFlux2_deviations))
         data_array = np.vstack((data_array, subBandFlux3_values, subBandFlux3_deviations))
@@ -296,36 +293,36 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             data_array = np.vstack((data_array, subBandFlux9_values, subBandFlux9_deviations))
         if samplingRate > 45000:
             data_array = np.vstack((data_array, subBandFlux10_values, subBandFlux10_deviations))
-    if tristimulus_flag:
+    if config.tristimulus_flag:
         data_array = np.vstack((data_array, tristimulus1_values, tristimulus1_deviations))
         data_array = np.vstack((data_array, tristimulus2_values, tristimulus2_deviations))
         data_array = np.vstack((data_array, tristimulus3_values, tristimulus3_deviations))
-    if inharmonicity_flag:
+    if config.inharmonicity_flag:
         data_array = np.vstack((data_array, inharmonicity_values, inharmonicity_deviations))
-    if noisiness_flag:
+    if config.noisiness_flag:
         data_array = np.vstack((data_array, noisiness_values, noisiness_deviations))
-    if oddeven_flag:
+    if config.oddeven_flag:
         data_array = np.vstack((data_array, oddEvenRatio_values, oddEvenRatio_deviations))
-    if roughness_flag:
+    if config.roughness_flag:
         data_array = np.vstack((data_array, roughness_values, roughness_deviations))
-    if loudness_flag:
+    if config.loudness_flag:
         data_array = np.vstack((data_array, loudnessMax_values, loudnessMax_deviations))
         data_array = np.vstack((data_array, loudnessAvr_values, loudnessAvr_deviations))
-    if tuning_flag:
+    if config.tuning_flag:
         data_array = np.vstack((data_array, tuning_values, tuning_deviations))
-    if crossingRate_flag:
+    if config.crossingRate_flag:
         data_array = np.vstack((data_array, zeroCrossingRate_values, zeroCrossingRate_deviations))
-    if rms_flag:
+    if config.rms_flag:
         data_array = np.vstack((data_array, rms_values, rms_deviations))
-    if entropy_flag:
+    if config.entropy_flag:
         data_array = np.vstack((data_array, entropy_values, entropy_deviations))
-    if temporalCentroid_flag:
+    if config.temporalCentroid_flag:
         data_array = np.vstack((data_array, temporalCentroid_values, temporalCentroid_deviations))
-    if logAttackTime_flag:
+    if config.logAttackTime_flag:
         data_array = np.vstack((data_array, logAttackTime_values, logAttackTime_deviations))
-    if decayTime_flag:
+    if config.decayTime_flag:
         data_array = np.vstack((data_array, decayTime_values, decayTime_deviations))
-    if mfcc_flag:
+    if config.mfcc_flag:
         data_array = np.vstack((data_array, mfcc1_means_values, mfcc1_means_deviations))
         data_array = np.vstack((data_array, mfcc1_stddevs_values, mfcc1_stddevs_deviations))
         data_array = np.vstack((data_array, mfcc2_means_values, mfcc2_means_deviations))
@@ -335,37 +332,37 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         data_array = np.vstack((data_array, mfcc4_means_values, mfcc4_means_deviations))
         data_array = np.vstack((data_array, mfcc4_stddevs_values, mfcc4_stddevs_deviations))
 
-    np.save(outputDirectory + '/' + parameterFileName + '_' + fileNameAppendix + '.npy', data_array)
+    np.save(f"{str(outputDirectory)}/{parameterFileName}_{fileNameAppendix}.npy", data_array)
 
     # Saving data into .csv file
-    with open(outputDirectory + '/' + parameterFileName + '_' + fileNameAppendix + '.csv', 'w', newline='') as csvfile:
+    with open(f"{str(outputDirectory)}/{parameterFileName}_{fileNameAppendix}.csv", 'w', newline='') as csvfile:
         dataWriter = csv.writer(csvfile, delimiter=',', quotechar=';', quoting=csv.QUOTE_MINIMAL)
         dataWriter.writerow(series_names)
-        if centroid_flag:
+        if config.centroid_flag:
             dataWriter.writerow(centroid_values)
             dataWriter.writerow(centroid_deviations)
-        if f0normCentroid_flag:
+        if config.f0normCentroid_flag:
             dataWriter.writerow(f0NormalizedCentroid_values)
             dataWriter.writerow(f0NormalizedCentroid_deviations)
-        if rolloff_flag:
+        if config.rolloff_flag:
             dataWriter.writerow(rolloff_values)
             dataWriter.writerow(rolloff_deviations)
-        if bandwidth_flag:
+        if config.bandwidth_flag:
             dataWriter.writerow(bandwidth_values)
             dataWriter.writerow(bandwidth_deviation)
-        if spread_flag:
+        if config.spread_flag:
             dataWriter.writerow(spread_values)
             dataWriter.writerow(spread_deviations)
-        if flux_flag:
+        if config.flux_flag:
             dataWriter.writerow(flux_values)
             dataWriter.writerow(flux_deviations)
-        if irregularity_flag:
+        if config.irregularity_flag:
             dataWriter.writerow(irregularity_values)
             dataWriter.writerow(irregularity_deviations)
-        if highLowEnergy_flag:
+        if config.highLowEnergy_flag:
             dataWriter.writerow(highLowEnergy_values)
             dataWriter.writerow(highLowEnegry_deviations)
-        if subBandFlux_flag:
+        if config.subBandFlux_flag:
             dataWriter.writerow(subBandFlux1_values)
             dataWriter.writerow(subBandFlux1_deviations)
             dataWriter.writerow(subBandFlux2_values)
@@ -388,52 +385,52 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             if samplingRate > 45000:
                 dataWriter.writerow(subBandFlux10_values)
                 dataWriter.writerow(subBandFlux10_deviations)
-        if tristimulus_flag:
+        if config.tristimulus_flag:
             dataWriter.writerow(tristimulus1_values)
             dataWriter.writerow(tristimulus1_deviations)
             dataWriter.writerow(tristimulus2_values)
             dataWriter.writerow(tristimulus2_deviations)
             dataWriter.writerow(tristimulus3_values)
             dataWriter.writerow(tristimulus3_deviations)
-        if inharmonicity_flag:
+        if config.inharmonicity_flag:
             dataWriter.writerow(inharmonicity_values)
             dataWriter.writerow(inharmonicity_deviations)
-        if noisiness_flag:
+        if config.noisiness_flag:
             dataWriter.writerow(noisiness_values)
             dataWriter.writerow(noisiness_deviations)
-        if oddeven_flag:
+        if config.oddeven_flag:
             dataWriter.writerow(oddEvenRatio_values)
             dataWriter.writerow(oddEvenRatio_deviations)
-        if roughness_flag:
+        if config.roughness_flag:
             dataWriter.writerow(roughness_values)
             dataWriter.writerow(roughness_deviations)
-        if loudness_flag:
+        if config.loudness_flag:
             dataWriter.writerow(loudnessMax_values)
             dataWriter.writerow(loudnessMax_deviations)
             dataWriter.writerow(loudnessAvr_values)
             dataWriter.writerow(loudnessAvr_deviations)
-        if tuning_flag:
+        if config.tuning_flag:
             dataWriter.writerow(tuning_values)
             dataWriter.writerow(tuning_deviations)
-        if crossingRate_flag:
+        if config.crossingRate_flag:
             dataWriter.writerow(zeroCrossingRate_values)
             dataWriter.writerow(zeroCrossingRate_deviations)
-        if rms_flag:
+        if config.rms_flag:
             dataWriter.writerow(rms_values)
             dataWriter.writerow(rms_deviations)
-        if entropy_flag:
+        if config.entropy_flag:
             dataWriter.writerow(entropy_values)
             dataWriter.writerow(entropy_deviations)
-        if temporalCentroid_flag:
+        if config.temporalCentroid_flag:
             dataWriter.writerow(temporalCentroid_values)
             dataWriter.writerow((temporalCentroid_deviations))
-        if logAttackTime_flag:
+        if config.logAttackTime_flag:
             dataWriter.writerow(logAttackTime_values)
             dataWriter.writerow(logAttackTime_deviations)
-        if decayTime_flag:
+        if config.decayTime_flag:
             dataWriter.writerow(decayTime_values)
             dataWriter.writerow(decayTime_deviations)
-        if mfcc_flag:
+        if config.mfcc_flag:
             dataWriter.writerow(mfcc1_means_values)
             dataWriter.writerow(mfcc1_means_deviations)
             dataWriter.writerow(mfcc1_stddevs_values)
@@ -455,7 +452,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     print("Data saved to: " + parameterFileName + '_' + fileNameAppendix)
 
     # Saving spectrum data
-    with open(outputDirectory + '/' + spectrumFileName + '_' + fileNameAppendix + '.csv', 'w', newline='') as csvfile:
+    with open(f"{str(outputDirectory)}/{spectrumFileName}_{fileNameAppendix}.csv", 'w', newline='') as csvfile:
         dataWriter = csv.writer(csvfile, delimiter=',', quotechar=';', quoting=csv.QUOTE_MINIMAL)
         for iterator in range(0, len(seriesNames)):
             dataWriter.writerow("Name: ")
@@ -481,7 +478,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
 
     spectrum_array, temp_array = [], []
     for iterator in range(0, len(seriesNames)):
-        outputFile = seriesNames[iterator].replace(inputDirectory, outputDirectory)
+        outputFile = seriesNames[iterator].replace(str(inputDirectory), str(outputDirectory))
         temp_array = [outputFile, allAttackSpectrums[iterator],
                                     allAttackFrequencies[iterator], allSustainSpectrums[iterator],
                                     allSustainFrequencies[iterator], allDecaySpectrums[iterator],
@@ -491,7 +488,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
         spectrum_array.append(temp_array)
 
 
-    np.save(outputDirectory + '/' + spectrumFileName + '_' + fileNameAppendix + '.npy', spectrum_array)
+    np.save(f"{str(outputDirectory)}/{spectrumFileName}_{fileNameAppendix}.npy", spectrum_array)
 
 
 
