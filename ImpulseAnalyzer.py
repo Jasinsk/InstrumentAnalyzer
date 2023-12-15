@@ -1,11 +1,11 @@
 import numpy as np
-import os
 import librosa
 import librosa.display
 import iracema
 import shutil
 import csv
 import ParameterCalculator as pc
+from pathlib import Path
 import mosqito
 #import crepe
 
@@ -26,10 +26,10 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     rms_flag, entropy_flag, temporalCentroid_flag, logAttackTime_flag, decayTime_flag, mfcc_flag):
 
     # clear output folder
-    if os.path.isdir(outputDirectory):
+    if Path(outputDirectory).is_dir():
             shutil.rmtree(outputDirectory)
     print(outputDirectory)
-    os.mkdir(outputDirectory)
+    Path(outputDirectory).mkdir()
     samplingRate = 0
 
     # ----------Setting up variables required for calculation and saving of parameter data---------------
@@ -76,9 +76,9 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     impulseTime, maxAttack, maxSustain, maxDecay = 0, 0, 0, 0
 
     # ---------------Calculating spectrums and parameters------------------
-    for seriesDirectory in sorted(os.listdir(os.fsencode(inputDirectory))):
-        if os.fsdecode(seriesDirectory) != ".DS_Store": # ignore MacOS system files
-            seriesDirectory = inputDirectory + "/" + os.fsdecode(seriesDirectory)
+    for seriesDirectory in sorted(Path(inputDirectory).iterdir()):
+        if seriesDirectory.name != ".DS_Store": # ignore MacOS system files
+            seriesDirectory = inputDirectory + "/" + seriesDirectory.name
             print("Entering folder: " + seriesDirectory)
             impulses, attackSpectrums, sustainSpectrums, decaySpectrums, centroids, f0normCentroids, rolloffs, bandwidths, \
             spreads, fluxes, irregularities, highLowEnergies, subBandFluxes1, subBandFluxes2, subBandFluxes3, subBandFluxes4, subBandFluxes5, \
@@ -93,10 +93,10 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             # If harmonic data and normalized centroids make no sense it may be caused by improper fundumental pitch detection.
             # Check in parameterData.csv whether the fundumentals were properly found.
             # If not, then manually add the correct pitch below and rerun the offending sounds.
-            fundumentalPitch =  82.41 #523.26 #261.63
+            fundumentalPitch =  0 #82.41 #523.26 #261.63
 
-            for impulseFile in sorted(os.listdir(os.fsencode(seriesDirectory))):
-                impulseFileName = seriesDirectory + "/" + os.fsdecode(impulseFile)
+            for impulseFile in sorted(Path(seriesDirectory).iterdir()):
+                impulseFileName = seriesDirectory + "/" + impulseFile.name
                 args = Arguments()
                 args.fundumentalPitch = fundumentalPitch
                 # librosa loading
