@@ -210,7 +210,10 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             allDecayFrequencies.append(decayFrequencies)
             allFullFrequencies.append(fullFrequencies)
             seriesNames.append(seriesDirectory)
-            impulseTime = len(impulses[0,:])/samplingRate
+            if len(impulses) == 1:
+                impulseTime = len(impulses[0]) / samplingRate
+            else:
+                impulseTime = len(impulses[0, :]) / samplingRate
             #maxAttack = max([maxAttack, max(avrAttackSpectrum)])
             #maxSustain = max([maxSustain, max(avrSustainSpectrum)])
             #maxDecay = max([maxDecay, max(avrDecaySpectrum)])

@@ -17,7 +17,7 @@ class Harmonics:
 
 def InsertIntoVstack(vector, stack):
     if stack == []:  # Not very elegant way to make sure the first impulse is loaded in correctly
-        stack = vector
+        stack = [vector]
     else:
         stack = np.vstack([stack, vector])
 
