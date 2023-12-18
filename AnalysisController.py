@@ -70,6 +70,7 @@ class ExecutionConfig:
         self.parameter_displayer_flag = True
         self.spectrum_displayer_flag = True
 
+
 def main():
     analyzer_config = AnalyzerConfig()
     displayer_config = DisplayerConfig()
