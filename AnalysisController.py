@@ -54,6 +54,12 @@ class DisplayerConfig:
         # Decide whether the output graphs showed be in vector format
         self.vectorOutput_flag = False
 
+        # Decide whether spectrums are divided between attack, sustain and decay phases
+        self.dividedSpectrum_flag = False
+
+        # Decide whiether frequencies on spectrums are in kHz
+        self.spectrumInKilohertz = False
+
 
 class ExecutionConfig:
     def __init__(self):
@@ -69,23 +75,23 @@ def main():
     displayer_config = DisplayerConfig()
     execution_config = ExecutionConfig()
 
-    for comparisonGroup in sorted(Path(ANALYZER_INPUT_DIR).iterdir()):
+    for comparison_path in sorted(Path(ANALYZER_INPUT_DIR).iterdir()):
 
-        if comparisonGroup.name != ".DS_Store":  # ignore MacOS system files
-            comparisonFolderName = Path(ANALYZER_INPUT_DIR) / comparisonGroup.name
-            comparisonOutputDirectory = Path(ANALYZER_OUTPUT_DIR) / comparisonGroup.name
+        if comparison_path.name != ".DS_Store":  # ignore MacOS system files
+            comparisonFolderName = Path(ANALYZER_INPUT_DIR) / comparison_path.name
+            comparisonOutputDirectory = Path(ANALYZER_OUTPUT_DIR) / comparison_path.name
 
             if execution_config.analyses_flag:
                 ImpulseAnalyzer.run(comparisonFolderName, comparisonOutputDirectory, PARAMETER_FILE_NAME,
-                                    SPECTRUM_FILE_NAME, comparisonGroup.name, analyzer_config)
+                                    SPECTRUM_FILE_NAME, comparison_path.name, analyzer_config)
 
             if execution_config.parameter_displayer_flag:
-                ParameterDisplayer.run(comparisonOutputDirectory, comparisonOutputDirectory, comparisonGroup.name,
-                                       PARAMETER_FILE_NAME, displayer_config.vectorOutput_flag)
+                ParameterDisplayer.run(comparisonOutputDirectory, comparisonOutputDirectory, comparison_path.name,
+                                       PARAMETER_FILE_NAME, displayer_config)
 
             if execution_config.spectrum_displayer_flag:
-                SpectrumDisplayer.run(comparisonOutputDirectory, comparisonOutputDirectory, comparisonGroup.name,
-                                      SPECTRUM_FILE_NAME, analyzer_config, displayer_config.vectorOutput_flag)
+                SpectrumDisplayer.run(comparisonOutputDirectory, comparisonOutputDirectory, comparison_path.name,
+                                      SPECTRUM_FILE_NAME, analyzer_config, displayer_config)
 
 
 if __name__ == "__main__":

@@ -30,7 +30,7 @@ def DrawSpectrum(frequencies, spectrum, maxValue, startTime, endTime, offset):
     #plt.yscale("log")
     # plt.text(1500, maxDecay, str('Energy = ' + str(CalculateRMS(allDecaySpectrums[iterator]))))
 
-def run(inputDirectory, outputDirectory, fileNameAppendix, spectrumFileName, config, vectorOutput_flag):
+def run(inputDirectory, outputDirectory, fileNameAppendix, spectrumFileName, analyzer_config, displayer_config):
 
     spectrumArray = np.load(f"{str(outputDirectory)}/{spectrumFileName}_{fileNameAppendix}.npy", allow_pickle=True)
 
@@ -54,27 +54,29 @@ def run(inputDirectory, outputDirectory, fileNameAppendix, spectrumFileName, con
 
         plt.suptitle(seriesNames[series].replace(str(inputDirectory), ''), fontsize='xx-large')
 
-        #converting frequencies to kHz for easier legibility
-        kAttackFrequencies = allAttackFrequencies/1000
-        kSustainFrequencies = allSustainFrequencies/1000
-        kDecayFrequencies = allDecayFrequencies/1000
-        kFullFrequencies = allFullFrequencies/1000
+        if displayer_config.spectrumInKilohertz:
+            #converting frequencies to kHz for easier legibility
+            allAttackFrequencies = allAttackFrequencies/1000
+            allSustainFrequencies = allSustainFrequencies/1000
+            allDecayFrequencies = allDecayFrequencies/1000
+            allFullFrequencies = allFullFrequencies/1000
 
-        ## Divided spectrums
-        '''
-        plt.subplot(131)
-        plt.ylabel("Magnitude [dB FS]", fontsize = 32)
-        #plt.ylabel("Amplituda [dB FS]", fontsize = 32)
-        DrawSpectrum(scalingFactor * allAttackFrequencies, allAttackSpectrums, maxAttack, '0', config.attackCutTime, offset=0)
-        plt.subplot(132)
-        DrawSpectrum(scalingFactor * allSustainFrequencies, allSustainSpectrums, maxSustain, attackTime, config.sustainCutTime, offset=0)
-        plt.subplot(133)
-        DrawSpectrum(scalingFactor * allDecayFrequencies, allDecaySpectrums, maxDecay, sustainTime, round(impulseTime, 2), offset=0)
-        '''
-        # Single full spectrum
-        plt.ylabel("Magnitude [dB FS]", fontsize=23)
-        DrawSpectrum(scalingFactor * allFullFrequencies, allFullSpectrums, maxAttack, '0', round(impulseTime, 2), current_offset)
-        current_offset += offset
+        if displayer_config.dividedSpectrum_flag:
+            ## Divided spectrums
+            plt.subplot(131)
+            plt.ylabel("Magnitude [dB FS]", fontsize = 32)
+            DrawSpectrum(scalingFactor * allAttackFrequencies, allAttackSpectrums, maxAttack, '0', analyzer_config.attackCutTime, offset=0)
+            plt.subplot(132)
+            DrawSpectrum(scalingFactor * allSustainFrequencies, allSustainSpectrums, maxSustain, analyzer_config.attackCutTime, analyzer_config.sustainCutTime, offset=0)
+            plt.subplot(133)
+            DrawSpectrum(scalingFactor * allDecayFrequencies, allDecaySpectrums, maxDecay, analyzer_config.sustainCutTime, round(impulseTime, 2), offset=0)
+
+        else:
+            # Single full spectrum
+            plt.ylabel("Magnitude [dB FS]", fontsize=23)
+            DrawSpectrum(scalingFactor * allFullFrequencies, allFullSpectrums, maxAttack, '0', round(impulseTime, 2), current_offset)
+            current_offset += offset
+
         print("Outputing to: " + seriesNames)
 
         figure = plt.gcf()
@@ -86,7 +88,7 @@ def run(inputDirectory, outputDirectory, fileNameAppendix, spectrumFileName, con
 
         plt.subplots_adjust(bottom=0.2)
 
-        if vectorOutput_flag:
+        if displayer_config.vectorOutput_flag:
             plt.savefig(seriesNames + '.pdf', dpi=1200, format="pdf", bbox_inches='tight')
         else:
             plt.savefig(seriesNames, dpi = 100)
