@@ -11,6 +11,12 @@ ANALYZER_OUTPUT_DIR = "AnalyzerOutputFolder"
 PARAMETER_FILE_NAME = "ParameterData"
 SPECTRUM_FILE_NAME = "SpectrumData"
 
+# -----------------ParameterDisplayer and SpectrumDisplayer Controls-------------------
+# Directories
+DISPLAYER_INPUT_DIR = ANALYZER_OUTPUT_DIR
+DISPLAYER_OUTPUT_DIR = "DisplayerOutputFolder"
+
+
 class AnalyzerConfig:
     def __init__(self):
         # Flags used to decide which parameters will be calculated
@@ -42,35 +48,45 @@ class AnalyzerConfig:
         self.attackCutTime = 1
         self.sustainCutTime = 3
 
-# -----------------ParameterDisplayer Controls-------------------
-# Directories
-DISPLAYER_INPUT_DIR = ANALYZER_OUTPUT_DIR
-DISPLAYER_OUTPUT_DIR = "DisplayerOutputFolder"
 
-# -----------------Output Controls-------------------
-# Decide whether the output graphs showed be in vector format
-vectorOutput_flag = False
+class DisplayerConfig:
+    def __init__(self):
+        # Decide whether the output graphs showed be in vector format
+        self.vectorOutput_flag = False
 
-# Decide which sections should be run
-analyses_flag = True
-parameter_displayer_flag = True
-spectrum_displayer_flag = True
-# -----------------Running sections-------------------
-analyzer_config = AnalyzerConfig()
-for comparisonGroup in sorted(Path(ANALYZER_INPUT_DIR).iterdir()):
 
-    if comparisonGroup.name != ".DS_Store": # ignore MacOS system files
-        comparisonFolderName = Path(ANALYZER_INPUT_DIR) / comparisonGroup.name
-        comparisonOutputDirectory = Path(ANALYZER_OUTPUT_DIR) / comparisonGroup.name
+class ExecutionConfig:
+    def __init__(self):
+        # Decide whether signal analysis should run
+        self.analyses_flag = True
 
-        if analyses_flag:
-            ImpulseAnalyzer.run(comparisonFolderName, comparisonOutputDirectory, PARAMETER_FILE_NAME,
-                                SPECTRUM_FILE_NAME, comparisonGroup.name, analyzer_config)
+        # Decide which display sections should be run
+        self.parameter_displayer_flag = True
+        self.spectrum_displayer_flag = True
 
-        if parameter_displayer_flag:
-            ParameterDisplayer.run(comparisonOutputDirectory, comparisonOutputDirectory, comparisonGroup.name,
-                                   PARAMETER_FILE_NAME, vectorOutput_flag)
+def main():
+    analyzer_config = AnalyzerConfig()
+    displayer_config = DisplayerConfig()
+    execution_config = ExecutionConfig()
 
-        if spectrum_displayer_flag:
-            SpectrumDisplayer.run(comparisonOutputDirectory, comparisonOutputDirectory, comparisonGroup.name,
-                                   SPECTRUM_FILE_NAME, analyzer_config, vectorOutput_flag)
+    for comparisonGroup in sorted(Path(ANALYZER_INPUT_DIR).iterdir()):
+
+        if comparisonGroup.name != ".DS_Store":  # ignore MacOS system files
+            comparisonFolderName = Path(ANALYZER_INPUT_DIR) / comparisonGroup.name
+            comparisonOutputDirectory = Path(ANALYZER_OUTPUT_DIR) / comparisonGroup.name
+
+            if execution_config.analyses_flag:
+                ImpulseAnalyzer.run(comparisonFolderName, comparisonOutputDirectory, PARAMETER_FILE_NAME,
+                                    SPECTRUM_FILE_NAME, comparisonGroup.name, analyzer_config)
+
+            if execution_config.parameter_displayer_flag:
+                ParameterDisplayer.run(comparisonOutputDirectory, comparisonOutputDirectory, comparisonGroup.name,
+                                       PARAMETER_FILE_NAME, displayer_config.vectorOutput_flag)
+
+            if execution_config.spectrum_displayer_flag:
+                SpectrumDisplayer.run(comparisonOutputDirectory, comparisonOutputDirectory, comparisonGroup.name,
+                                      SPECTRUM_FILE_NAME, analyzer_config, displayer_config.vectorOutput_flag)
+
+
+if __name__ == "__main__":
+    main()
