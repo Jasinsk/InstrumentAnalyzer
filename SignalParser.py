@@ -69,38 +69,36 @@ def RemoveImpulsesWithEnergyDeviation(impulses, samplingRate, acceptableDeviatio
         impulsEnergies.append(sum((impulses[i,:]) * (impulses[i,:])))
         attackEnergies.append(sum((impulses[i,:round(attackTime*samplingRate)]) * (impulses[i,:round(attackTime*samplingRate)])))
 
-    ratio = 3
-    while ratio !=0:
-        i = 0
-        meanEnergy = sum(impulsEnergies) / len(impulsEnergies)
-        print("impulse mean is: " + str(meanEnergy))
-        for el in impulsEnergies:
-            if el > meanEnergy * (1 + ratio * (acceptableDeviation/100) or el < meanEnergy * (1 - ratio * (acceptableDeviation/100))):
+    while True:
+        meanImpulseEnergy = sum(impulsEnergies) / len(impulsEnergies)
+        impulsesDiscarded = 0
+        for i in range(len(impulsEnergies) - 1, -1, -1):  # iterates backwards to avoid "Out of Bounds" error after values are deleted
+            if impulsEnergies[i] > meanImpulseEnergy * (1 + (acceptableDeviation/100) or impulsEnergies[i] < meanImpulseEnergy * (1 - (acceptableDeviation/100))):
                 impulses = np.delete(impulses, i, axis=0)
                 impulsPeaks = np.delete(impulsPeaks, i)
                 impulsEnergies = np.delete(impulsEnergies, i)
                 attackEnergies = np.delete(attackEnergies, i)
+                impulsesDiscarded += 1
+                i -= 1
                 print("Energy Deviation Detected!")
-            else:
-                i += 1
 
-        ratio -= 1
+        if impulsesDiscarded == 0:
+            break
 
-    ratio = 3
-    while ratio !=0:
-        i = 0
+    while True:
         meanAttackEnergy = sum(attackEnergies) / len(attackEnergies)
-        print("attack mean is: " + str(meanAttackEnergy))
-        for el in attackEnergies:
-            if el < meanAttackEnergy * (1 - ratio * acceptableAttackDeviation):
+        impulsesDiscarded = 0
+        for i in range(len(impulsEnergies) - 1, -1, -1):  # iterates backwards to avoid "Out of Bounds" error after values are deleted
+            if attackEnergies[i] < meanAttackEnergy * (1 - acceptableAttackDeviation):
                 impulses = np.delete(impulses, i, axis=0)
                 impulsPeaks = np.delete(impulsPeaks, i)
                 attackEnergies = np.delete(attackEnergies, i)
+                impulsesDiscarded += 1
+                i -= 1
                 print("Early Energy Deviation Detected!")
-            else:
-                i += 1
 
-        ratio -= 1
+        if impulsesDiscarded == 0:
+            break
 
     return impulses, impulsPeaks
 
@@ -147,13 +145,13 @@ class ParserConfig:
         self.minimalTimeDifference = 13  # Minimal time difference between peaks for them to be included
 
         # Single impulse parsing
-        self.attackTime = 0.2  # Time before the peak that is included in the impulse
-        self.decayTime = 12  # Time after the peak that is included in the impulse
+        self.attackTime = 0.2  # Time before the peak that is included in the impulse [s]
+        self.decayTime = 12  # Time after the peak that is included in the impulse [s]
 
         # Energy validation of impulses
-        self.energyDeviationPercentage = 5  # The percentage of the mean energy above which impulses are disregarded
+        self.energyDeviationPercentage = 2  # The percentage of the mean energy above which impulses are disregarded
         self.attackEnergyTime = 3  # The attack time for the purpose of impulse energy analysis
-        self.attackEnergyDeviationPercentage = 15  # The percentage of the mean attack energy above which impulses are disregarded
+        self.attackEnergyDeviationPercentage = 2  # The percentage of the mean attack energy above which impulses are disregarded
 
         # Show figures of found peaks to manually check proper parsing
         self.showFoundPeaks_Flag = True
