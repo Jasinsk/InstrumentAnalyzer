@@ -13,70 +13,76 @@ import soundfile as sf
 from pathlib import Path
 
 
-# Returns sample numbers of all offsets that exceed the threshold
-def FindPeaks(signal, samplingRate, thresholdPercentage = 70, threshold = -1, reachBackTime = 0.1, reachAheadTime = 0.2):
-    if threshold == -1:
+# Returns sample numbers of all onsets that exceed the threshold value or percentage of maximum value
+def FindPeaks(signal, samplingRate, thresholdPercentage=70, threshold=-1, reachBackTime=0.1, reachAheadTime=0.2):
+    if threshold == -1:  # set threshold as given value or percentage of max value
         threshold = (thresholdPercentage/100) * np.amax(signal)
-    DetectedOffsets = librosa.onset.onset_detect(y = signal, sr = samplingRate, backtrack=False, units="samples")
+    detectedOnsets = librosa.onset.onset_detect(y=signal, sr=samplingRate, backtrack=False, units="samples")
     parsingIndicator = []
 
-    for el in DetectedOffsets:
-        if el < math.floor(reachBackTime * samplingRate):
+    for el in detectedOnsets:
+        # Looking ahead and behind the automatically found onsets to include the maximum peak value
+        if el < math.floor(reachBackTime * samplingRate): # If onset is too close to signal beginning
             reachBack = el
         else:
             reachBack = math.floor(reachBackTime * samplingRate)
-        if len(signal) - el < math.floor(reachAheadTime * samplingRate):
+        if len(signal) - el < math.floor(reachAheadTime * samplingRate): # If onset is too close to signal end
             reachAhead = len(signal) - el
         else:
             reachAhead = math.floor(reachAheadTime * samplingRate)
-        offsetFragment = signal[list(range(el - reachBack, el + reachAhead))]
 
-        if np.amax(offsetFragment) > threshold:
+        onsetFragment = signal[list(range(el - reachBack, el + reachAhead))]
+
+        # Discarding peaks below threshold values
+        if np.amax(onsetFragment) > threshold:
             parsingIndicator.append(el)
 
     return parsingIndicator
 
 # Trims peak list of all duplicates that are closer to each other then the minimalTimeDifference or closer to the end then the impulseDecayTime
 def RemoveDuplicatePeaks(peaks, samplingRate, minimalTimeDifference = 1, impulseDecayTime = 0, signalLength = 0):
-    for i in range(0, len(peaks)-1):
+    for i in range(0, len(peaks)-1):  # Mark peaks that are too close to each other
         if peaks[i] + samplingRate * minimalTimeDifference > peaks[i+1]:
             peaks[i] = 0
             print('Duplicate peaks detected!')
-    if signalLength != 0 and peaks[-1] + impulseDecayTime * samplingRate > signalLength:
+    if signalLength != 0 and peaks[-1] + impulseDecayTime * samplingRate > signalLength:  # Mark peaks that are too close to the signal ends
         peaks[-1] = 0
         print("Peak too close to end of signal. Peak removed")
-    peaks = np.ma.masked_equal(peaks,0).compressed()
+    peaks = np.ma.masked_equal(peaks,0).compressed()  # Remove marked peaks
     return peaks
 
+
 # Returns array which has rows of impulses cut from the main signal based on the found peaks
-def ParseImpulses(signal, samplingRate, peaks, attackTime = 0.05, decayTime = 7):
+def ParseImpulses(signal, samplingRate, peaks, attackTime=0.2, decayTime=7):
     impulses = []
     for el in peaks:
         if el + decayTime * samplingRate < len(signal):
-            impuls = signal[list(range(el - math.floor(attackTime * samplingRate), math.floor(el + decayTime * samplingRate)))]
+            impulse = signal[list(range(el - math.floor(attackTime * samplingRate), math.floor(el + decayTime * samplingRate)))]
             if len(impulses) == 0:
-                impulses = impuls
+                impulses = impulse
             else:
-                impulses = np.vstack([impulses, impuls])
+                impulses = np.vstack([impulses, impulse])
         else:
             print("Peak too close to end of signal. Impulse not parsed")
     return impulses
 
 # Removes impulses that have too large of an energy deviation from the mean
-def RemoveImpulsesWithEnergyDeviation(impulses, samplingRate, acceptableDeviation = 30, impulsPeaks = [], attackTime = 2, acceptableAttackDeviation = 60):
-    impulsEnergies, attackEnergies = [], []
+def RemoveImpulsesWithEnergyDeviation(impulses, samplingRate, acceptableDeviation = 30, impulsePeaks = [], attackTime = 2, acceptableAttackDeviation = 60):
+    impulseEnergies, attackEnergies = [], []
     for i in range (0, len(impulses[:,0])):
-        impulsEnergies.append(sum((impulses[i,:]) * (impulses[i,:])))
+        impulseEnergies.append(sum((impulses[i,:]) * (impulses[i,:])))
         attackEnergies.append(sum((impulses[i,:round(attackTime*samplingRate)]) * (impulses[i,:round(attackTime*samplingRate)])))
 
+    # Check full impulse energies
     while True:
-        meanImpulseEnergy = sum(impulsEnergies) / len(impulsEnergies)
+        meanImpulseEnergy = sum(impulseEnergies) / len(impulseEnergies)
         impulsesDiscarded = 0
-        for i in range(len(impulsEnergies) - 1, -1, -1):  # iterates backwards to avoid "Out of Bounds" error after values are deleted
-            if impulsEnergies[i] > meanImpulseEnergy * (1 + (acceptableDeviation/100) or impulsEnergies[i] < meanImpulseEnergy * (1 - (acceptableDeviation/100))):
+        for i in range(len(impulseEnergies) - 1, -1, -1):  # iterates backwards to avoid "Out of Bounds" error after values are deleted
+            if impulseEnergies[i] > meanImpulseEnergy * (1 + (acceptableDeviation/100) or impulseEnergies[i] < meanImpulseEnergy * (1 - (acceptableDeviation/100))):
+                # Remove impulse from all lists
                 impulses = np.delete(impulses, i, axis=0)
-                impulsPeaks = np.delete(impulsPeaks, i)
-                impulsEnergies = np.delete(impulsEnergies, i)
+                impulsePeaks = np.delete(impulsePeaks, i)
+                impulseEnergies = np.delete(impulseEnergies, i)
                 attackEnergies = np.delete(attackEnergies, i)
                 impulsesDiscarded += 1
                 i -= 1
@@ -85,13 +91,15 @@ def RemoveImpulsesWithEnergyDeviation(impulses, samplingRate, acceptableDeviatio
         if impulsesDiscarded == 0:
             break
 
+    # Check attack impulse energies
     while True:
         meanAttackEnergy = sum(attackEnergies) / len(attackEnergies)
         impulsesDiscarded = 0
-        for i in range(len(impulsEnergies) - 1, -1, -1):  # iterates backwards to avoid "Out of Bounds" error after values are deleted
+        for i in range(len(impulseEnergies) - 1, -1, -1):  # iterates backwards to avoid "Out of Bounds" error after values are deleted
             if attackEnergies[i] < meanAttackEnergy * (1 - acceptableAttackDeviation):
+                # Remove impulse from all lists
                 impulses = np.delete(impulses, i, axis=0)
-                impulsPeaks = np.delete(impulsPeaks, i)
+                impulsePeaks = np.delete(impulsePeaks, i)
                 attackEnergies = np.delete(attackEnergies, i)
                 impulsesDiscarded += 1
                 i -= 1
@@ -100,19 +108,20 @@ def RemoveImpulsesWithEnergyDeviation(impulses, samplingRate, acceptableDeviatio
         if impulsesDiscarded == 0:
             break
 
-    return impulses, impulsPeaks
+    return impulses, impulsePeaks
 
 # Saves parsed impulses a folder inside the output directory
 def WriteParsedImpulsesToFolder(impulses, sampleRate, outputDirectory, seriesDirectory):
-    outputPath = outputDirectory + "/" + seriesDirectory
+    outputPath = Path(outputDirectory) / seriesDirectory
     Path(outputPath).mkdir()
     for i in range (0, len(impulses[:,0])):
-        filename = outputPath + "/" + seriesDirectory + "_" + str(i) + ".wav"
+        filename = f"{outputPath}/{seriesDirectory}_{str(i)}.wav"
         sf.write(filename, impulses[i,:], sampleRate)
 
 
 # Draws the original signal with validation and discarded strips for manual validation
 def DrawParsedImpulseValidation(signal, foundPeaks, validatedPeaks, samplingRate, seriesDirectory):
+    # Creating found and discarded peak stripes
     parsingIndicator = np.zeros(len(signal))
     for el in foundPeaks:
         parsingIndicator[el] = 1
@@ -123,7 +132,7 @@ def DrawParsedImpulseValidation(signal, foundPeaks, validatedPeaks, samplingRate
         validatedIndicator[el] = 1
         validatedIndicator[el + 1] = -1
 
-    # Drawing the results of the parsers work
+    # Drawing the original signal with parsed impulse strips laid on top
     timeVector = np.arange(0, len(signal) / samplingRate, 1 / samplingRate)
     ylimit = max(abs(signal))
     plt.figure()
