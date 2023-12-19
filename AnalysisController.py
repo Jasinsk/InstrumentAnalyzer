@@ -21,7 +21,7 @@ class AnalyzerConfig:
     def __init__(self):
         # Flags used to decide which parameters will be calculated
         self.centroid_flag = True
-        self.f0normCentroid_flag = True
+        self.f0NormCentroid_flag = True
         self.rolloff_flag = True
         self.bandwidth_flag = True
         self.spread_flag = True
@@ -32,11 +32,11 @@ class AnalyzerConfig:
         self.tristimulus_flag = True
         self.inharmonicity_flag = True
         self.noisiness_flag = True
-        self.oddeven_flag = True
+        self.oddEven_flag = True
         self.roughness_flag = True
         self.loudness_flag = True
         self.tuning_flag = True
-        self.crossingRate_flag = True
+        self.zeroCrossingRate_flag = True
         self.rms_flag = True
         self.entropy_flag = True
         self.temporalCentroid_flag = True
