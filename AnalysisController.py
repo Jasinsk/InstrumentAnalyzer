@@ -20,29 +20,29 @@ DISPLAYER_OUTPUT_DIR = "DisplayerOutputFolder"
 class AnalyzerConfig:
     def __init__(self):
         # Flags used to decide which parameters will be calculated
-        self.centroid_flag = True
-        self.f0NormCentroid_flag = True
-        self.rolloff_flag = True
-        self.bandwidth_flag = True
-        self.spread_flag = True
-        self.flux_flag = True
-        self.irregularity_flag = True
-        self.highLowEnergy_flag = True
-        self.subBandFlux_flag = True
-        self.tristimulus_flag = True
-        self.inharmonicity_flag = True
-        self.noisiness_flag = True
-        self.oddEven_flag = True
-        self.roughness_flag = True
-        self.loudness_flag = True
-        self.tuning_flag = True
-        self.zeroCrossingRate_flag = True
-        self.rms_flag = True
-        self.entropy_flag = True
-        self.temporalCentroid_flag = True
-        self.logAttackTime_flag = True
-        self.decayTime_flag = True
-        self.mfcc_flag = True
+        self.centroid_flag =        True
+        self.f0NormCentroid_flag =  True
+        self.rolloff_flag =         True
+        self.bandwidth_flag =       True
+        self.spread_flag =          True
+        self.flux_flag =            True
+        self.irregularity_flag =    True
+        self.highLowEnergy_flag =   True
+        self.subBandFlux_flag =     True
+        self.tristimulus_flag =     True
+        self.inharmonicity_flag =   True
+        self.noisiness_flag =       True
+        self.oddEven_flag =         True
+        self.roughness_flag =       True
+        self.loudness_flag =        True
+        self.tuning_flag =          True
+        self.zeroCrossingRate_flag= True
+        self.rms_flag =             True
+        self.entropy_flag =         True
+        self.temporalCentroid_flag= True
+        self.logAttackTime_flag =   True
+        self.decayTime_flag =       True
+        self.mfcc_flag =            True
 
         # The impulse is cut into three parts, beginning-attackTime, attackTime-sustainTime, sustainTime-end [s]
         self.attackCutTime = 1

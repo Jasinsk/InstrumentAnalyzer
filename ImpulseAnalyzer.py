@@ -1,3 +1,8 @@
+"""
+This script accepts folders with individually parsed impulses and calculates averaged spectra as well as
+spectral and energy parameters. The results of these calculations are saved in the output directory for further use
+with displayers
+"""
 import numpy as np
 import librosa
 import librosa.display
@@ -7,10 +12,6 @@ import csv
 import ParameterCalculator as pc
 from pathlib import Path
 import mosqito
-
-# This script accepts folders with individually parsed impulses and calculates an averaged spectrum for each directory.
-# The plots of these results are saved into the output directory.
-# Spectral and energy parameters are also calculated and saved into the output directory.
 
 
 class Arguments:
@@ -27,48 +28,48 @@ class ParameterValues:
 class ParameterData:
     def __init__(self, config):
         self.ParameterValuesDict = {
-            "centroid": ParameterValues("Spectrum Centroid", config.centroid_flag),
+            "centroid":         ParameterValues("Spectrum Centroid", config.centroid_flag),
             "f0NormalizedCentroid": ParameterValues("F0 Normalized Spectral Centroid", config.f0NormCentroid_flag),
-            "rolloff": ParameterValues("Rolloff", config.rolloff_flag),
-            "bandwidth": ParameterValues("Bandwidth", config.bandwidth_flag),
-            "spread": ParameterValues("Spread", config.spread_flag),
-            "flux": ParameterValues("Spectral Flux", config.flux_flag),
-            "irregularity": ParameterValues("Spectral Irregularity", config.irregularity_flag),
-            "highLowEnergy": ParameterValues("High Energy - Low Energy Ratio", config.highLowEnergy_flag),
-            "subBandFlux1": ParameterValues("Sub-Band Flux 1", config.subBandFlux_flag),
-            "subBandFlux2": ParameterValues("Sub-Band Flux 2", config.subBandFlux_flag),
-            "subBandFlux3": ParameterValues("Sub-Band Flux 3", config.subBandFlux_flag),
-            "subBandFlux4": ParameterValues("Sub-Band Flux 4", config.subBandFlux_flag),
-            "subBandFlux5": ParameterValues("Sub-Band Flux 5", config.subBandFlux_flag),
-            "subBandFlux6": ParameterValues("Sub-Band Flux 6", config.subBandFlux_flag),
-            "subBandFlux7": ParameterValues("Sub-Band Flux 7", config.subBandFlux_flag),
-            "subBandFlux8": ParameterValues("Sub-Band Flux 8", config.subBandFlux_flag),
-            "subBandFlux9": ParameterValues("Sub-Band Flux 9", config.subBandFlux_flag),
-            "subBandFlux10": ParameterValues("Sub-Band Flux 10", config.subBandFlux_flag),
-            "tristimulus1": ParameterValues("Tristimulus 1", config.tristimulus_flag),
-            "tristimulus2": ParameterValues("Tristimulus 2", config.tristimulus_flag),
-            "tristimulus3": ParameterValues("Tristimulus 3", config.tristimulus_flag),
-            "inharmonicity": ParameterValues("Inharmonicity", config.inharmonicity_flag),
-            "noisiness": ParameterValues("Noisiness", config.noisiness_flag),
-            "oddEvenRatio": ParameterValues("Odd-Even Ratio", config.oddEven_flag),
-            "roughness": ParameterValues("Roughness", config.roughness_flag),
-            "loudnessMax": ParameterValues("Loudness Max", config.loudness_flag),
-            "loudnessAvr": ParameterValues("Loudness Avr", config.loudness_flag),
-            "tuning": ParameterValues("Tuning", config.tuning_flag),
+            "rolloff":          ParameterValues("Rolloff", config.rolloff_flag),
+            "bandwidth":        ParameterValues("Bandwidth", config.bandwidth_flag),
+            "spread":           ParameterValues("Spread", config.spread_flag),
+            "flux":             ParameterValues("Spectral Flux", config.flux_flag),
+            "irregularity":     ParameterValues("Spectral Irregularity", config.irregularity_flag),
+            "highLowEnergy":    ParameterValues("High Energy - Low Energy Ratio", config.highLowEnergy_flag),
+            "subBandFlux1":     ParameterValues("Sub-Band Flux 1", config.subBandFlux_flag),
+            "subBandFlux2":     ParameterValues("Sub-Band Flux 2", config.subBandFlux_flag),
+            "subBandFlux3":     ParameterValues("Sub-Band Flux 3", config.subBandFlux_flag),
+            "subBandFlux4":     ParameterValues("Sub-Band Flux 4", config.subBandFlux_flag),
+            "subBandFlux5":     ParameterValues("Sub-Band Flux 5", config.subBandFlux_flag),
+            "subBandFlux6":     ParameterValues("Sub-Band Flux 6", config.subBandFlux_flag),
+            "subBandFlux7":     ParameterValues("Sub-Band Flux 7", config.subBandFlux_flag),
+            "subBandFlux8":     ParameterValues("Sub-Band Flux 8", config.subBandFlux_flag),
+            "subBandFlux9":     ParameterValues("Sub-Band Flux 9", config.subBandFlux_flag),
+            "subBandFlux10":    ParameterValues("Sub-Band Flux 10", config.subBandFlux_flag),
+            "tristimulus1":     ParameterValues("Tristimulus 1", config.tristimulus_flag),
+            "tristimulus2":     ParameterValues("Tristimulus 2", config.tristimulus_flag),
+            "tristimulus3":     ParameterValues("Tristimulus 3", config.tristimulus_flag),
+            "inharmonicity":    ParameterValues("Inharmonicity", config.inharmonicity_flag),
+            "noisiness":        ParameterValues("Noisiness", config.noisiness_flag),
+            "oddEvenRatio":     ParameterValues("Odd-Even Ratio", config.oddEven_flag),
+            "roughness":        ParameterValues("Roughness", config.roughness_flag),
+            "loudnessMax":      ParameterValues("Loudness Max", config.loudness_flag),
+            "loudnessAvr":      ParameterValues("Loudness Avr", config.loudness_flag),
+            "tuning":           ParameterValues("Tuning", config.tuning_flag),
             "zeroCrossingRate": ParameterValues("Zero Crossing Rate", config.zeroCrossingRate_flag),
-            "rms": ParameterValues("RMS", config.rms_flag),
-            "entropy": ParameterValues("Entropy", config.entropy_flag),
+            "rms":              ParameterValues("RMS", config.rms_flag),
+            "entropy":          ParameterValues("Entropy", config.entropy_flag),
             "temporalCentroid": ParameterValues("Temporal Centroid", config.temporalCentroid_flag),
-            "logAttackTime": ParameterValues("Log Attack Time", config.logAttackTime_flag),
-            "decayTime": ParameterValues("Decay Time", config.decayTime_flag),
-            "mfcc1_means": ParameterValues("MFCC 1 - mean", config.mfcc_flag),
-            "mfcc1_stddevs": ParameterValues("MFCC 1 - STDDEV", config.mfcc_flag),
-            "mfcc2_means": ParameterValues("MFCC 2 - mean", config.mfcc_flag),
-            "mfcc2_stddevs": ParameterValues("MFCC 2 - STDDEV", config.mfcc_flag),
-            "mfcc3_means": ParameterValues("MFCC 3 - mean", config.mfcc_flag),
-            "mfcc3_stddevs": ParameterValues("MFCC 3 - STDDEV", config.mfcc_flag),
-            "mfcc4_means": ParameterValues("MFCC 4 - mean", config.mfcc_flag),
-            "mfcc4_stddevs": ParameterValues("MFCC 4 - STDDEV", config.mfcc_flag),
+            "logAttackTime":    ParameterValues("Log Attack Time", config.logAttackTime_flag),
+            "decayTime":        ParameterValues("Decay Time", config.decayTime_flag),
+            "mfcc1_means":      ParameterValues("MFCC 1 - mean", config.mfcc_flag),
+            "mfcc1_stddevs":    ParameterValues("MFCC 1 - STDDEV", config.mfcc_flag),
+            "mfcc2_means":      ParameterValues("MFCC 2 - mean", config.mfcc_flag),
+            "mfcc2_stddevs":    ParameterValues("MFCC 2 - STDDEV", config.mfcc_flag),
+            "mfcc3_means":      ParameterValues("MFCC 3 - mean", config.mfcc_flag),
+            "mfcc3_stddevs":    ParameterValues("MFCC 3 - STDDEV", config.mfcc_flag),
+            "mfcc4_means":      ParameterValues("MFCC 4 - mean", config.mfcc_flag),
+            "mfcc4_stddevs":    ParameterValues("MFCC 4 - STDDEV", config.mfcc_flag),
         }
 
     def AppendSeriesStatistics(self, seriesData):
@@ -144,9 +145,69 @@ class SeriesData:
         }
 
 
+class Spectrum:
+    def __init__(self):
+        self.values = []
+        self.frequencies = []
+
+
+class SpectrumData:
+    def __init__(self):
+        self.SpectrumDict = {
+            "AttackSpectrums": Spectrum(),
+            "SustainSpectrums": Spectrum(),
+            "DecaySpectrums": Spectrum(),
+            "FullSpectrums": Spectrum()
+        }
+
+    def SaveData(self, seriesNames, inputDirectory, outputDirectory, spectrumFileName, fileNameAppendix):
+        spectrum_array = []
+        for i in range(0, len(seriesNames)):
+            outputFile = seriesNames[i].replace(str(inputDirectory), str(outputDirectory))
+            spectrum_array.append([outputFile,
+                          self.SpectrumDict["AttackSpectrums"].values[i],
+                          self.SpectrumDict["AttackSpectrums"].frequencies[i],
+                          self.SpectrumDict["SustainSpectrums"].values[i],
+                          self.SpectrumDict["SustainSpectrums"].frequencies[i],
+                          self.SpectrumDict["DecaySpectrums"].values[i],
+                          self.SpectrumDict["DecaySpectrums"].frequencies[i],
+                          self.SpectrumDict["FullSpectrums"].values[i],
+                          self.SpectrumDict["FullSpectrums"].frequencies[i]
+                          ])
+
+        np.save(f"{str(outputDirectory)}/{spectrumFileName}_{fileNameAppendix}.npy", spectrum_array)
+
+    def SaveCSV(self, seriesNames, outputDirectory, spectrumFileName, fileNameAppendix):
+        with open(f"{str(outputDirectory)}/{spectrumFileName}_{fileNameAppendix}.csv", 'w', newline='') as csvfile:
+            dataWriter = csv.writer(csvfile, delimiter=',', quotechar=';', quoting=csv.QUOTE_MINIMAL)
+            print(seriesNames)
+            for i in range(0, len(seriesNames)):
+                dataWriter.writerow("Name: ")
+                dataWriter.writerow(seriesNames[i])
+                dataWriter.writerow("Attack spectrum: ")
+                dataWriter.writerow(self.SpectrumDict["AttackSpectrums"].values[i])
+                dataWriter.writerow("Attack frequencies: ")
+                dataWriter.writerow(self.SpectrumDict["AttackSpectrums"].frequencies[i])
+                dataWriter.writerow("Sustain spectrum: ")
+                dataWriter.writerow(self.SpectrumDict["SustainSpectrums"].values[i])
+                dataWriter.writerow("Sustain frequencies: ")
+                dataWriter.writerow(self.SpectrumDict["SustainSpectrums"].frequencies[i])
+                dataWriter.writerow("Decay Spectrum: ")
+                dataWriter.writerow(self.SpectrumDict["DecaySpectrums"].values[i])
+                dataWriter.writerow("Decay frequencies: ")
+                dataWriter.writerow(self.SpectrumDict["DecaySpectrums"].frequencies[i])
+                dataWriter.writerow("Full Spectrum: ")
+                dataWriter.writerow(self.SpectrumDict["FullSpectrums"].values[i])
+                dataWriter.writerow("Full frequencies: ")
+                dataWriter.writerow(self.SpectrumDict["FullSpectrums"].frequencies[i])
+                print(i)
+
+        print(f"Spectrums saved to: {spectrumFileName}_{fileNameAppendix}")
+
+
 def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fileNameAppendix, config):
 
-    # clear output folder
+    # Clear output folder
     if Path(outputDirectory).is_dir():
         shutil.rmtree(outputDirectory)
     print(outputDirectory)
@@ -154,11 +215,10 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
 
     # ----------Setting up variables required for calculation and saving of parameter data---------------
     series_names = [" "]
-    foundFundumentalPitches = ["Average Found Fundumental Pitches"]
+    foundFundamentalPitches = ["Average Found Fundamental Pitches"]
     parameterData = ParameterData(config)
-
-    allAttackSpectrums, allSustainSpectrums, allDecaySpectrums, allFullSpectrums, allAttackFrequencies, allSustainFrequencies, \
-            allDecayFrequencies, allFullFrequencies, seriesNames = [], [], [], [], [], [], [], [], []
+    spectrumData = SpectrumData()
+    seriesNames = []
 
     # ---------------Calculating spectrums and parameters------------------
     for seriesDirectory in sorted(Path(inputDirectory).iterdir()):
@@ -256,22 +316,23 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
 
             if fundumentalPitch == 0:
                 fundumentalPitch = np.median(pitchesHz)
-            foundFundumentalPitches.append(fundumentalPitch)
+            foundFundamentalPitches.append(fundumentalPitch)
             mathHarmFreq = pc.CreateMathematicalHarmonicFrequencyVector(fundumentalPitch, n=20)
             harmonicData = pc.ExtractHarmonicDataFromSpectrums(fullSpectrums, fullFrequencies, mathHarmFreq, bufforInHZ=20)
 
             if config.noisiness_flag:
-                noisinesses = pc.CalculateNoisiness(fullSpectrums, fullFrequencies, harmonicData)
+                seriesData.SeriesDict["noisiness"] = pc.CalculateNoisiness(fullSpectrums, fullFrequencies, harmonicData)
             if config.highLowEnergy_flag:
-                highLowEnergies = pc.CalculateHighEnergyLowEnergyRatio(fullSpectrums, fullFrequencies)
+                seriesData.SeriesDict["highLowEnergy"] = pc.CalculateHighEnergyLowEnergyRatio(fullSpectrums, fullFrequencies)
             if config.irregularity_flag:
-                irregularities = pc.CalculateIrregularity(harmonicData)
+                seriesData.SeriesDict["irregularity"] = pc.CalculateIrregularity(harmonicData)
             if config.tristimulus_flag:
-                tristimulus1s, tristimulus2s, tristimulus3s = pc.CalculateTristimulus(harmonicData)
+                seriesData.SeriesDict["tristimulus1"], seriesData.SeriesDict["tristimulus2"], \
+                seriesData.SeriesDict["tristimulus3"] = pc.CalculateTristimulus(harmonicData)
             if config.inharmonicity_flag:
-                inharmonicities = pc.CalculateInharmonicity(harmonicData)
+                seriesData.SeriesDict["inharmonicity"] = pc.CalculateInharmonicity(harmonicData)
             if config.oddEven_flag:
-                oddEvenRatios = pc.CalculateOERs(harmonicData)
+                seriesData.SeriesDict["oddEvenRatio"] = pc.CalculateOERs(harmonicData)
 
             # Dividing spectrum data into segments
             avrAttackSpectrum = pc.CalculateAverageVector(attackSpectrums)
@@ -279,19 +340,15 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             avrDecaySpectrum = pc.CalculateAverageVector(decaySpectrums)
             avrFullSpectrum = pc.CalculateAverageVector(fullSpectrums)
 
-            allAttackSpectrums.append(avrAttackSpectrum)
-            allSustainSpectrums.append(avrSustainSpectrum)
-            allDecaySpectrums.append(avrDecaySpectrum)
-            allFullSpectrums.append(avrFullSpectrum)
-            allAttackFrequencies.append(attackFrequencies)
-            allSustainFrequencies.append(sustainFrequencies)
-            allDecayFrequencies.append(decayFrequencies)
-            allFullFrequencies.append(fullFrequencies)
+            spectrumData.SpectrumDict["AttackSpectrums"].values.append(avrAttackSpectrum)
+            spectrumData.SpectrumDict["SustainSpectrums"].values.append(avrSustainSpectrum)
+            spectrumData.SpectrumDict["DecaySpectrums"].values.append(avrDecaySpectrum)
+            spectrumData.SpectrumDict["FullSpectrums"].values.append(avrFullSpectrum)
+            spectrumData.SpectrumDict["AttackSpectrums"].frequencies.append(attackFrequencies)
+            spectrumData.SpectrumDict["SustainSpectrums"].frequencies.append(sustainFrequencies)
+            spectrumData.SpectrumDict["DecaySpectrums"].frequencies.append(decayFrequencies)
+            spectrumData.SpectrumDict["FullSpectrums"].frequencies.append(fullFrequencies)
             seriesNames.append(str(seriesDirectory))
-            if len(impulses) == 1:
-                impulseTime = len(impulses[0]) / args.samplingRate
-            else:
-                impulseTime = len(impulses[0, :]) / args.samplingRate
 
             seriesName = seriesDirectory.name
             series_names.append(seriesName)
@@ -304,43 +361,12 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     parameterData.SaveData(data_array, outputDirectory, parameterFileName, fileNameAppendix)
 
     # Saving data into .csv file
-    parameterData.SaveCSV(data_array, outputDirectory, parameterFileName, fileNameAppendix, foundFundumentalPitches)
+    parameterData.SaveCSV(data_array, outputDirectory, parameterFileName, fileNameAppendix, foundFundamentalPitches)
 
     # Saving spectrum data
-    with open(f"{str(outputDirectory)}/{spectrumFileName}_{fileNameAppendix}.csv", 'w', newline='') as csvfile:
-        dataWriter = csv.writer(csvfile, delimiter=',', quotechar=';', quoting=csv.QUOTE_MINIMAL)
-        for iterator in range(0, len(seriesNames)):
-            dataWriter.writerow("Name: ")
-            dataWriter.writerow(seriesNames[iterator])
-            dataWriter.writerow("Attack spectrum: ")
-            dataWriter.writerow(allAttackSpectrums[iterator])
-            dataWriter.writerow("Attack frequencies: ")
-            dataWriter.writerow(allAttackFrequencies[iterator])
-            dataWriter.writerow("Sustain spectrum: ")
-            dataWriter.writerow(allSustainSpectrums[iterator])
-            dataWriter.writerow("Sustain frequencies: ")
-            dataWriter.writerow(allSustainFrequencies[iterator])
-            dataWriter.writerow("Decay Spectrum: ")
-            dataWriter.writerow(allDecaySpectrums[iterator])
-            dataWriter.writerow("Decay frequencies: ")
-            dataWriter.writerow(allDecayFrequencies[iterator])
-            dataWriter.writerow("Full Spectrum: ")
-            dataWriter.writerow(allFullSpectrums[iterator])
-            dataWriter.writerow("Full frequencies: ")
-            dataWriter.writerow(allFullFrequencies[iterator])
+    spectrumData.SaveData(data_array, inputDirectory, outputDirectory, spectrumFileName, fileNameAppendix)
 
-    print(f"Spectrums saved to: {spectrumFileName}_{fileNameAppendix}")
+    # Saving spectrum data into .csv file
+    spectrumData.SaveCSV(seriesNames, outputDirectory, spectrumFileName, fileNameAppendix)
 
-    spectrum_array, temp_array = [], []
-    for iterator in range(0, len(seriesNames)):
-        outputFile = seriesNames[iterator].replace(str(inputDirectory), str(outputDirectory))
-        temp_array = [outputFile, allAttackSpectrums[iterator],
-                                    allAttackFrequencies[iterator], allSustainSpectrums[iterator],
-                                    allSustainFrequencies[iterator], allDecaySpectrums[iterator],
-                                    allDecayFrequencies[iterator], allFullSpectrums[iterator],
-                                    allFullFrequencies[iterator]]
-
-        spectrum_array.append(temp_array)
-
-    np.save(f"{str(outputDirectory)}/{spectrumFileName}_{fileNameAppendix}.npy", spectrum_array)
 
