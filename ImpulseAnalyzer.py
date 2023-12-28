@@ -227,15 +227,10 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             seriesData = SeriesData()
             impulses, attackSpectrums, sustainSpectrums, decaySpectrums, pitchesHz = [], [], [], [], []
 
-            # If harmonic data and normalized centroids make no sense it may be caused by improper fundumental pitch detection.
-            # Check in ParameterValues.csv whether the fundumentals were properly found.
-            # If not, then manually add the correct pitch below and rerun the offending sounds.
-            fundumentalPitch =  0 #82.41 #523.26 #261.63
-
             for impulseFile in sorted(Path(seriesDirectory).iterdir()):
                 impulseFileName = Path(seriesDirectory) / impulseFile.name
                 args = Arguments()
-                args.fundumentalPitch = fundumentalPitch
+                args.fundamentalFrequency = config.fundamentalFrequency
                 # librosa loading
                 print("Loading file: " + str(impulseFileName))
                 args.impulseLIB, args.samplingRate = librosa.load(impulseFileName, sr=48000)
@@ -251,10 +246,10 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
                 if config.centroid_flag:
                     seriesData.SeriesDict["centroid"].append(np.mean(librosa.feature.spectral_centroid(args.impulseLIB, sr=args.samplingRate)))
                 if config.f0NormCentroid_flag:
-                    if fundumentalPitch == 0:
+                    if not config.fundamentalFrequency:
                         seriesData.SeriesDict["f0NormalizedCentroid"].append((np.mean(librosa.feature.spectral_centroid(args.impulseLIB, sr=args.samplingRate) / np.median(args.pitch.data))))
                     else:
-                        seriesData.SeriesDict["f0NormalizedCentroid"].append((np.mean(librosa.feature.spectral_centroid(args.impulseLIB, sr=args.samplingRate) / fundumentalPitch)))
+                        seriesData.SeriesDict["f0NormalizedCentroid"].append((np.mean(librosa.feature.spectral_centroid(args.impulseLIB, sr=args.samplingRate) / config.fundamentalFrequency)))
                 if config.rolloff_flag:
                     seriesData.SeriesDict["rolloff"].append(np.mean(librosa.feature.spectral_rolloff(args.impulseLIB, sr=args.samplingRate)))
                 if config.bandwidth_flag:
@@ -312,10 +307,14 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             fullFrequencies, fullSpectrums, attackFrequencies, attackSpectrums, sustainFrequencies, sustainSpectrums, \
             decayFrequencies, decaySpectrums = pc.CalculateFFTs(impulses, args.samplingRate, config.attackCutTime, config.sustainCutTime)
 
-            if fundumentalPitch == 0:
-                fundumentalPitch = np.median(pitchesHz)
-            foundFundamentalPitches.append(fundumentalPitch)
-            mathHarmFreq = pc.CreateMathematicalHarmonicFrequencyVector(fundumentalPitch, n=20)
+            if not config.fundamentalFrequency:
+                fundamentalFrequency = np.median(pitchesHz)
+                print(f"Found fundumental frequency: {fundamentalFrequency}")
+            else:
+                fundamentalFrequency = config.fundamentalFrequency
+
+            foundFundamentalPitches.append(fundamentalFrequency)
+            mathHarmFreq = pc.CreateMathematicalHarmonicFrequencyVector(fundamentalFrequency, n=20)
             harmonicData = pc.ExtractHarmonicDataFromSpectrums(fullSpectrums, fullFrequencies, mathHarmFreq, bufforInHZ=20)
 
             if config.noisiness_flag:
@@ -348,8 +347,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
             spectrumData.SpectrumDict["FullSpectrums"].frequencies.append(fullFrequencies)
             seriesNames.append(str(seriesDirectory))
 
-            seriesName = seriesDirectory.name
-            series_names.append(seriesName)
+            series_names.append(seriesDirectory.name)
 
             parameterData.AppendSeriesStatistics(seriesData)
 
