@@ -31,11 +31,10 @@ def CalculateAverageVector(Vectors): # Takes a vector of vectors and calculates 
 
 
 def CalculateFFTs(takes, samplingRate, attackTime, sustainTime): # Takes array of impulses and creates array of spectrums
-    #No idea why thid is needed but it seems to be needed. If harmonics don't work correctly start here!
-    #samplingRate = samplingRate/2
     attackSpectrums, sustainSpectrums, decaySpectrums, fullSpectrums = [], [], [], []
     attackFrequencies, sustainFrequencies, decayFrequencies, fullFrequencies = 0, 0, 0, 0
 
+    #These are experimental values used to calibrate to full scale
     full, attack, sustain, decay = 48.87, 35.19, 40.42, 47.98
 
     for take in takes:
@@ -48,11 +47,7 @@ def CalculateFFTs(takes, samplingRate, attackTime, sustainTime): # Takes array o
         decaySpectrum = scipy.fft.fft(take[int(sustainTime*samplingRate):], norm='ortho')
         decayFrequencies = scipy.fft.fftfreq(len(take[int(sustainTime*samplingRate):]), 1/samplingRate)
 
-        #fullSpectrum = fullSpectrum/7
-        #attackSpectrum = attackSpectrum/attackTime
-        #sustainSpectrum = sustainSpectrum/(sustainTime - attackTime)
-        #decaySpectrum = decaySpectrum/(7 - sustainTime)
-
+        # Scaling to be decibels Full Scale
         fullSpectrum = 10 * np.log10(abs(fullSpectrum)) - full
         attackSpectrum = 10 * np.log10(abs(attackSpectrum)) - attack
         sustainSpectrum = 10 * np.log10(abs(sustainSpectrum)) - sustain
@@ -130,7 +125,7 @@ def ExtractHarmonicDataFromSpectrums(spectrums, spectrumFrequencies, mathHarmoni
 
 def CalculateNoisiness(spectrums, frequencies, harmonicsData, harmonicWidth = 0.5):
     noisinesses = []
-    for takeNumber in range (0, len(spectrums)): #Dla każdego dźwięku
+    for takeNumber in range (0, len(spectrums)):
         fullEnergy, harmonicEnergy = 0, 0
 
         for sample in spectrums[takeNumber]:
