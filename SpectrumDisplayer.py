@@ -89,9 +89,9 @@ def run(inputDirectory, outputDirectory, fileNameAppendix, spectrumFileName, ana
         plt.subplots_adjust(bottom=0.2)
 
         if displayer_config.vectorOutput_flag:
-            plt.savefig(seriesNames + '.pdf', dpi=1200, format="pdf", bbox_inches='tight')
+            plt.savefig(f"Spectrum_{seriesNames}.pdf", dpi=1200, format="pdf", bbox_inches='tight')
         else:
-            plt.savefig(seriesNames, dpi = 100)
+            plt.savefig(f"Spectrum_{seriesNames}", dpi = 100)
 
 
         #plt.show()

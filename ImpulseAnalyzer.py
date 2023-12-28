@@ -180,7 +180,6 @@ class SpectrumData:
     def SaveCSV(self, seriesNames, outputDirectory, spectrumFileName, fileNameAppendix):
         with open(f"{str(outputDirectory)}/{spectrumFileName}_{fileNameAppendix}.csv", 'w', newline='') as csvfile:
             dataWriter = csv.writer(csvfile, delimiter=',', quotechar=';', quoting=csv.QUOTE_MINIMAL)
-            print(seriesNames)
             for i in range(0, len(seriesNames)):
                 dataWriter.writerow("Name: ")
                 dataWriter.writerow(seriesNames[i])
@@ -200,7 +199,6 @@ class SpectrumData:
                 dataWriter.writerow(self.SpectrumDict["FullSpectrums"].values[i])
                 dataWriter.writerow("Full frequencies: ")
                 dataWriter.writerow(self.SpectrumDict["FullSpectrums"].frequencies[i])
-                print(i)
 
         print(f"Spectrums saved to: {spectrumFileName}_{fileNameAppendix}")
 
@@ -364,7 +362,7 @@ def run(inputDirectory, outputDirectory, parameterFileName, spectrumFileName, fi
     parameterData.SaveCSV(data_array, outputDirectory, parameterFileName, fileNameAppendix, foundFundamentalPitches)
 
     # Saving spectrum data
-    spectrumData.SaveData(data_array, inputDirectory, outputDirectory, spectrumFileName, fileNameAppendix)
+    spectrumData.SaveData(seriesNames, inputDirectory, outputDirectory, spectrumFileName, fileNameAppendix)
 
     # Saving spectrum data into .csv file
     spectrumData.SaveCSV(seriesNames, outputDirectory, spectrumFileName, fileNameAppendix)
