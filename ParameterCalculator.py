@@ -9,6 +9,7 @@ import librosa
 import iracema
 import OctaveBandFilter as obf
 import mosqito
+import matplotlib.pyplot as plt
 
 
 class Harmonics:
@@ -103,21 +104,21 @@ def ExtractHarmonicDataFromSpectrums(spectrums, spectrumFrequencies, mathHarmoni
                     break
 
         # showing found harmonics and spectrum for debugging
-        '''
+        """
         print(amplitudes)
         print(harmonicFrequencies)
 
         x = []
         for y in range(0, len(harmonicFrequencies)):
-            x.append(y)
-        plt.subplot(121)
+            x.append(y + 1)
+        plt.subplot(211)
         plt.plot(spectrumFrequencies, spectrum)
-        plt.xlim([0,10000])
-        plt.subplot(122)
+        plt.xlim([0,4000])
+        plt.subplot(212)
         plt.bar(x, amplitudes)
         plt.xlim([0, 30])
         plt.show()
-        '''
+        """
 
         harmonicData.append(Harmonics(harmonicFrequencies, amplitudes))
     return harmonicData
@@ -257,8 +258,11 @@ def CalculateDecayTime(args, windowLength = 2048, hopsize = 128, threshold = 15)
     envelope.data = 10 * np.log10(abs(envelope.data))
     maxEnv = max(envelope.data)
 
-    #plt.plot(envelope.data)
-    #plt.show()
+    # Show found envelopes for debugging
+    """
+    plt.plot(envelope.data)
+    plt.show()
+    """
 
     peakTime = 0
     decayTime = 0
