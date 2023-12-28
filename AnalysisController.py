@@ -50,7 +50,7 @@ class AnalyzerConfig:
 
         # If you encounter issues with the automatic fundamental frequency finding you can hardcode it here
         # False -> Use frequency finding; int value -> Use given frequency
-        self.fundamentalFrequency = 82.41 #523.26 #261.63
+        self.fundamentalFrequency = False #82.41 #523.26 #261.63
 
 
 class DisplayerConfig:
