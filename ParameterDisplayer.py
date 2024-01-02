@@ -31,12 +31,12 @@ def run(inputDirectory, outputDirectory, fileNameAppendix, dataFileName, display
         plt.xticks([0, 1, 2], ['30', '50', '65'])
         plt.xticks([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], ['25', '30', '35', '40', '45', '50', '55', '60', '65', '70'])
         plt.xticks([0, 1, 2, 3], ['Sapele', 'Pine', 'Plywood', 'Rosewood'], fontsize=15, rotation=0)
-        """
+        
         plt.xticks([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
                    ['wn', 'wn-100', 'wn-300', 'wn-1500', 'wn-1500-2oct', 'wn-1500-3oct', 'wn-6000', 'sine-440', 'sine-447',
                     'triangle-440', 'saw-440', 'sine-100,200,300,400', 'sine-100,210,320,390', 'a-2,d-8', 'a-0,5,d-9,5',
                     'a-1,d-9', 'a-1,d-1', 'guitar'], fontsize=9, rotation=90)
-        """
+        
         plt.xticks([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17], ['klasyczna', 'elektryczna', 'fuzz', 'sitar',
                                         'koto', 'klawesyn', 'pianino', 'wibrafon', 'marimba', 'skrzypce', 'kontrabas', 'fletnia pana',
                                         'trabka', 'klarnet', 'organy', 'moog', 'FM', 'sinus + szum'], fontsize=8, rotation=90)
@@ -56,9 +56,9 @@ def run(inputDirectory, outputDirectory, fileNameAppendix, dataFileName, display
         plt.xticks([0, 1, 2, 3], ['No Modification', 'F14', 'K6', 'K6 with Phase Shift'], fontsize=10, rotation=0)
             
         plt.xticks([0,1,2,3], ["100", "80", "60", "40"], fontsize=12)
-    
+        """
         plt.xticks([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], ["Filc", "Guma", "Nylon 0.8 1", "Nylon 0.8 2", "Nylon 0.8 3", "Nylon 0.67", "Nylon 0.94", "Nylon 1.14", "Poliweglan", "Stal"], fontsize=9, rotation=45)
-    
+        """
         plt.xticks([0,1,2,3], ["094", "114", "067", "080"])
         """
 
@@ -103,7 +103,8 @@ def run(inputDirectory, outputDirectory, fileNameAppendix, dataFileName, display
             plt.ylabel('Tristimulus', fontsize=customFontsize)
 
         # Graph settings
-        plt.errorbar(seriesNames, values, deviations, fmt='kD', ecolor='r', elinewidth=2, capthick=2, capsize=15, markersize=9)
+        plt.errorbar(seriesNames, values, deviations, fmt='kD', ecolor='r', elinewidth=0.1, capthick=1, capsize=15, markersize=15, alpha=1)
+
         #plt.title(parameterName)
         plt.margins(0.03)
         plt.subplots_adjust(bottom=0.2)
@@ -112,6 +113,16 @@ def run(inputDirectory, outputDirectory, fileNameAppendix, dataFileName, display
         plt.yticks(fontsize=15)
         plt.xticks(fontsize=17)
         plt.xlabel(xValueLabel, fontsize=18)
+        # Special visuals
+        # Make an error box connecting all error bars
+        #plt.fill_between(seriesNames, values - deviations, values + deviations, alpha=0.1)
+        # Highlight a section of the graph
+        #plt.axvspan(xmin=10, xmax=15, facecolor='yellow', alpha=0.2)
+        # Create colored boxes in place of error bars
+        for i in range(len(seriesNames)):
+            box_width = 0.015 * len(seriesNames)
+            plt.fill_betweenx([values[i] - deviations[i], values[i] + deviations[i]], i - box_width, i + box_width, color='red', alpha=0.15)
+
 
         # Saving graph
         outputFile = f"{str(outputDirectory)}/{parameterName}_{fileNameAppendix}"
