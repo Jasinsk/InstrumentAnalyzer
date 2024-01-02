@@ -61,8 +61,11 @@ class DisplayerConfig:
         # Decide whether spectrums are divided between attack, sustain and decay phases
         self.dividedSpectrum_flag = False
 
-        # Decide whiether frequencies on spectrums are in kHz
+        # Decide whether frequencies on spectrums are in kHz
         self.spectrumInKilohertz = False
+
+        # Choose the language in which the graphs are created
+        self.graphsInPolish = False
 
 
 class ExecutionConfig:

@@ -1,8 +1,10 @@
+"""
+This script draws the spectrums calculated and saved by ImpulseAnalyzer.py
+"""
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
-# This script draws the spectrums calculated and saved in ImpulseAnalyzer.py
 
 def DrawSpectrum(frequencies, spectrum, maxValue, startTime, endTime, offset):
     plt.plot(frequencies + offset, spectrum, linewidth=1)
