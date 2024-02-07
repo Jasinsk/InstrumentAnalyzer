@@ -1,38 +1,41 @@
+"""
+This file implements all function and calculations that are needed in the process of analysing impulses
+
+"""
 import numpy as np
 import math
-from scipy import signal
 import scipy
-import matplotlib.pyplot as plt
 import librosa
 import iracema
 import OctaveBandFilter as obf
 import mosqito
+import matplotlib.pyplot as plt
 
-# This file implements all function and calculations that are needed in the process of analysing impulses
 
 class Harmonics:
     def __init__(self, frequencies, amplitudes):
         self.frequencies = frequencies
         self.amplitudes = amplitudes
 
+
 def InsertIntoVstack(vector, stack):
-    if stack == []:  # Not very elegant way to make sure the first impulse is loaded in correctly
+    if len(stack) == 0:
         stack = [vector]
     else:
         stack = np.vstack([stack, vector])
-
     return stack
+
 
 def CalculateAverageVector(Vectors): # Takes a vector of vectors and calculates a average vector
     averageVector = np.mean(Vectors, axis=0)
     return averageVector
 
+
 def CalculateFFTs(takes, samplingRate, attackTime, sustainTime): # Takes array of impulses and creates array of spectrums
-    #No idea why thid is needed but it seems to be needed. If harmonics don't work correctly start here!
-    #samplingRate = samplingRate/2
     attackSpectrums, sustainSpectrums, decaySpectrums, fullSpectrums = [], [], [], []
     attackFrequencies, sustainFrequencies, decayFrequencies, fullFrequencies = 0, 0, 0, 0
 
+    #These are experimental values used to calibrate to full scale
     full, attack, sustain, decay = 48.87, 35.19, 40.42, 47.98
 
     for take in takes:
@@ -45,11 +48,7 @@ def CalculateFFTs(takes, samplingRate, attackTime, sustainTime): # Takes array o
         decaySpectrum = scipy.fft.fft(take[int(sustainTime*samplingRate):], norm='ortho')
         decayFrequencies = scipy.fft.fftfreq(len(take[int(sustainTime*samplingRate):]), 1/samplingRate)
 
-        #fullSpectrum = fullSpectrum/7
-        #attackSpectrum = attackSpectrum/attackTime
-        #sustainSpectrum = sustainSpectrum/(sustainTime - attackTime)
-        #decaySpectrum = decaySpectrum/(7 - sustainTime)
-
+        # Scaling to be decibels Full Scale
         fullSpectrum = 10 * np.log10(abs(fullSpectrum)) - full
         attackSpectrum = 10 * np.log10(abs(attackSpectrum)) - attack
         sustainSpectrum = 10 * np.log10(abs(sustainSpectrum)) - sustain
@@ -62,6 +61,7 @@ def CalculateFFTs(takes, samplingRate, attackTime, sustainTime): # Takes array o
 
     return fullFrequencies, fullSpectrums, attackFrequencies, attackSpectrums, sustainFrequencies, sustainSpectrums, decayFrequencies, decaySpectrums
 
+
 # Creates vector of mathematical harmonic frequencies based on the fundamental pitch
 def CreateMathematicalHarmonicFrequencyVector(pitch, n):
     freq = []
@@ -69,12 +69,14 @@ def CreateMathematicalHarmonicFrequencyVector(pitch, n):
         freq.append(pitch * i)
     return freq
 
+
 # Based on harmonic data from iracema estimates the fundamental pitch
 def EstimateFundamentalPitch(harmonicFrequencies):
     fundamentalPitches = []
     for i in range (0, len(harmonicFrequencies)):
         fundamentalPitches.append(harmonicFrequencies[i]/(i+1))
     return np.mean(fundamentalPitches)
+
 
 # Takes spectrum of impulse and the mathematical harmonic frequencies and returns the amplitudes and frequencies of harmonics in the signal
 def ExtractHarmonicDataFromSpectrums(spectrums, spectrumFrequencies, mathHarmonicFrequencies, bufforInHZ = 5):
@@ -102,28 +104,29 @@ def ExtractHarmonicDataFromSpectrums(spectrums, spectrumFrequencies, mathHarmoni
                     break
 
         # showing found harmonics and spectrum for debugging
-        '''
+        """
         print(amplitudes)
         print(harmonicFrequencies)
 
         x = []
         for y in range(0, len(harmonicFrequencies)):
-            x.append(y)
-        plt.subplot(121)
+            x.append(y + 1)
+        plt.subplot(211)
         plt.plot(spectrumFrequencies, spectrum)
-        plt.xlim([0,10000])
-        plt.subplot(122)
+        plt.xlim([0,4000])
+        plt.subplot(212)
         plt.bar(x, amplitudes)
         plt.xlim([0, 30])
         plt.show()
-        '''
+        """
 
         harmonicData.append(Harmonics(harmonicFrequencies, amplitudes))
     return harmonicData
 
+
 def CalculateNoisiness(spectrums, frequencies, harmonicsData, harmonicWidth = 0.5):
     noisinesses = []
-    for takeNumber in range (0, len(spectrums)): #Dla każdego dźwięku
+    for takeNumber in range (0, len(spectrums)):
         fullEnergy, harmonicEnergy = 0, 0
 
         for sample in spectrums[takeNumber]:
@@ -136,6 +139,7 @@ def CalculateNoisiness(spectrums, frequencies, harmonicsData, harmonicWidth = 0.
         noisinesses.append((fullEnergy-harmonicEnergy)/fullEnergy)
     return noisinesses
 
+
 def CalculateIrregularity(harmonicData): # Calculates spectral harmonic irregularity according to Krimphoff, McAdams 1994
     irregularities = []
     for take in harmonicData:
@@ -144,6 +148,7 @@ def CalculateIrregularity(harmonicData): # Calculates spectral harmonic irregula
             irregularity += abs(take.amplitudes[i] - np.mean(take.amplitudes[i - 1] + take.amplitudes[i] + take.amplitudes[i + 1]))
         irregularities.append(np.log10(irregularity))
     return irregularities
+
 
 def CalculateHighEnergyLowEnergyRatio(spectrums, frequencies, boundaryFrequency = 1500):
     highlowenergies = []
@@ -156,6 +161,7 @@ def CalculateHighEnergyLowEnergyRatio(spectrums, frequencies, boundaryFrequency 
                 highEnergy += pow(take[sample], 2)
         highlowenergies.append(highEnergy/lowEnergy)
     return highlowenergies
+
 
 def CalculateTristimulus(harmonicsData):
     tristimulus1s, tristimulus2s, tristimulus3s = [], [], []
@@ -171,6 +177,7 @@ def CalculateTristimulus(harmonicsData):
         tristimulus3s.append(fiveUpAmplitudes/allAmplitudes)
     return tristimulus1s, tristimulus2s, tristimulus3s
 
+
 def CalculateInharmonicity(harmonicsData):
     inharmonicities = []
     for take in harmonicsData:
@@ -181,6 +188,7 @@ def CalculateInharmonicity(harmonicsData):
             allAmplitudes += pow(take.amplitudes[i], 2)
         inharmonicities.append((2*Inharmonicity)/(fundumentalPitch*allAmplitudes))
     return inharmonicities
+
 
 def CalculateOERs(harmonicsData):
     oers = []
@@ -194,20 +202,23 @@ def CalculateOERs(harmonicsData):
         oers.append(odd/even)
     return oers
 
+
 def CalculateLoudness(args):
     N, N_spec, bark_axis, time_axis = mosqito.loudness_zwtv(args.impulseLIB, args.samplingRate, field_type="free")
     return max(N), np.mean(N)
+
 
 def CalculateRoughness(args):
     r, r_spec, bark, time = mosqito.roughness_dw(args.impulseLIB, args.samplingRate)
     return np.mean(r)
 
+
 def CalculateRMS(args):
     return np.sum(librosa.feature.rms(args.impulseLIB))
 
+
 #Calculates the signals temporal centroid. Only takes into account signal over threshold to disguard silence.
 # Watch out when using signals of different lengths.
-
 def CalculateTemporalCentroid(args, windowLength = 128, hopsize = 64, threshold = 0.1):
     envelope = iracema.features.peak_envelope(args.impulseIRA, windowLength, hopsize)
     envelope.data = 10 * np.log10(abs(envelope.data))
@@ -219,6 +230,7 @@ def CalculateTemporalCentroid(args, windowLength = 128, hopsize = 64, threshold 
         if envelope.data[i] > (maxEnv * threshold):
             ampXTimeSum += envelope.time[i] * envelope.data[i]
     return (ampXTimeSum/amplitudeSum)
+
 
 # Calculate log of attack time of signal. The algorythm was simplified when it comes to finding the start time of attack due to the it giving better results for guitar
 def CalculateLogAttackTime(args, windowLength = 64, hopsize = 32, threshold = 0.1):
@@ -239,14 +251,18 @@ def CalculateLogAttackTime(args, windowLength = 64, hopsize = 32, threshold = 0.
     else:
         return 0
 
+
 # Calculates time between the peak of impulse and it decaying below the value of max-threshold in dB
 def CalculateDecayTime(args, windowLength = 2048, hopsize = 128, threshold = 15):
     envelope = iracema.features.peak_envelope(args.impulseIRA, windowLength, hopsize)
     envelope.data = 10 * np.log10(abs(envelope.data))
     maxEnv = max(envelope.data)
 
-    #plt.plot(envelope.data)
-    #plt.show()
+    # Show found envelopes for debugging
+    """
+    plt.plot(envelope.data)
+    plt.show()
+    """
 
     peakTime = 0
     decayTime = 0
@@ -262,6 +278,7 @@ def CalculateDecayTime(args, windowLength = 2048, hopsize = 128, threshold = 15)
             break
     return decayTime
 
+
 # Calculating Euclidean Distance between adjacent points of signal. Used in sub-band flux calculation
 def CalculateEuclideanDistance(signal):
     distance = 0
@@ -269,6 +286,7 @@ def CalculateEuclideanDistance(signal):
         distance += pow(signal[i] - signal[i-1], 2)
 
     return math.sqrt(distance)
+
 
 # Calculates sub-band spectral flux as defined in "Exploring perceptual and acoustical correlates of polyphonic timbre"
 def CalculateSubBandSpectralFlux(args, samplingRate):
