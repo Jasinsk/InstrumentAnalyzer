@@ -10,6 +10,8 @@ import iracema
 import OctaveBandFilter as obf
 import mosqito
 import matplotlib.pyplot as plt
+from scipy.signal import hilbert
+from scipy.ndimage import gaussian_filter1d
 
 
 class Harmonics:
@@ -124,6 +126,20 @@ def ExtractHarmonicDataFromSpectrums(spectrums, spectrumFrequencies, mathHarmoni
     return harmonicData
 
 
+def SmoothEnvelope(envelope, window_size, sigma=20, padding_mode='reflect'):
+
+    # Pad the envelope to minimize boundary effects
+    pad_size = int(3 * sigma)
+    padded_envelope = np.pad(envelope, pad_size, mode=padding_mode)
+
+    smoothed_padded_envelope = np.convolve(padded_envelope, np.ones(window_size)/window_size, mode='same')
+
+    # Remove the padding
+    smoothed_envelope = smoothed_padded_envelope[pad_size:-pad_size]
+
+    return smoothed_envelope
+
+
 def CalculateNoisiness(spectrums, frequencies, harmonicsData, harmonicWidth = 0.5):
     noisinesses = []
     for takeNumber in range (0, len(spectrums)):
@@ -182,11 +198,11 @@ def CalculateInharmonicity(harmonicsData):
     inharmonicities = []
     for take in harmonicsData:
         fundumentalPitch = EstimateFundamentalPitch(take.frequencies)
-        Inharmonicity, allAmplitudes = 0, 0
+        inharmonicity, allAmplitudes = 0, 0
         for i in range(0,len(take.frequencies)):
-            Inharmonicity += (abs(take.frequencies[i]-fundumentalPitch*(i+1))*pow(take.amplitudes[i], 2))
+            inharmonicity += (abs(take.frequencies[i]-fundumentalPitch*(i+1))*pow(take.amplitudes[i], 2))
             allAmplitudes += pow(take.amplitudes[i], 2)
-        inharmonicities.append((2*Inharmonicity)/(fundumentalPitch*allAmplitudes))
+        inharmonicities.append((2*inharmonicity)/(fundumentalPitch*allAmplitudes))
     return inharmonicities
 
 
@@ -219,16 +235,17 @@ def CalculateRMS(args):
 
 #Calculates the signals temporal centroid. Only takes into account signal over threshold to disguard silence.
 # Watch out when using signals of different lengths.
-def CalculateTemporalCentroid(args, windowLength = 128, hopsize = 64, threshold = 0.1):
+def CalculateTemporalCentroid(args, windowLength = 128, hopsize = 64, threshold = 15):
     envelope = iracema.features.peak_envelope(args.impulseIRA, windowLength, hopsize)
     envelope.data = 10 * np.log10(abs(envelope.data))
     maxEnv = max(envelope.data)
+
     amplitudeSum = sum(envelope.data)
     ampXTimeSum = 0
 
     for i in range(0, len(envelope)):
-        if envelope.data[i] > (maxEnv * threshold):
-            ampXTimeSum += envelope.time[i] * envelope.data[i]
+        if envelope.data[i] > (maxEnv - threshold):
+            ampXTimeSum += (envelope.time[i] * envelope.data[i])
     return (ampXTimeSum/amplitudeSum)
 
 
@@ -256,26 +273,37 @@ def CalculateLogAttackTime(args, windowLength = 64, hopsize = 32, threshold = 0.
 def CalculateDecayTime(args, windowLength = 2048, hopsize = 128, threshold = 15):
     envelope = iracema.features.peak_envelope(args.impulseIRA, windowLength, hopsize)
     envelope.data = 10 * np.log10(abs(envelope.data))
-    maxEnv = max(envelope.data)
 
-    # Show found envelopes for debugging
-    """
-    plt.plot(envelope.data)
-    plt.show()
-    """
+    windowSize = int(args.samplingRate * 0.004)
+    smoothedEnvelope = SmoothEnvelope(envelope.data, windowSize)
+    maxEnv = max(smoothedEnvelope)
+
+    startIndicator = np.zeros(len(envelope.data))
+    stopIndicator = np.zeros(len(envelope.data))
 
     peakTime = 0
     decayTime = 0
     flag = False
 
-    for i in range(0, len(envelope.data)):
-        if envelope.data[i] == maxEnv:
+    for i in range(0, len(smoothedEnvelope)):
+        if smoothedEnvelope[i] == maxEnv:
             peakTime = envelope.time[i]
+            startIndicator[i] = -50
             flag = True
 
-        if (maxEnv - threshold > envelope.data[i]) & flag:
+        if (maxEnv - threshold > smoothedEnvelope[i]) & flag:
             decayTime = envelope.time[i] - peakTime
+            stopIndicator[i] = -50
             break
+    '''
+    # Drawing the original signal with parsed impulse strips laid on top
+    plt.figure()
+    plt.plot(smoothedEnvelope, color='silver', label='Envelope')
+    plt.plot(startIndicator, 'orangered', label='Start Decay Time')
+    plt.plot(stopIndicator, color='chartreuse', label='Stop Decay Time')
+    plt.legend(loc='lower right')
+    plt.show()
+    '''
     return decayTime
 
 
