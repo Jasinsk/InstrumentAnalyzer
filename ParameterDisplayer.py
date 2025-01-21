@@ -174,9 +174,9 @@ def run(inputDirectory, outputDirectory, fileNameAppendix, dataFileName, display
         cmap = plt.get_cmap("tab10")
         colors = [cmap(i) for i in range(6)]
 
-        for i in range(0, 25, 6):
-            x = range(24)
-            plt.fill_between(x[i:i + 6], values[i:i + 6], color=colors[int(i/6)], alpha=0.3)
+        # for i in range(0, 25, 6):
+        #     x = range(24)
+        #     plt.fill_between(x[i:i + 6], values[i:i + 6], color=colors[int(i/6)], alpha=0.3)
 
         # Saving graph
         outputFile = f"{str(outputDirectory)}/{parameterName}_{fileNameAppendix}"
