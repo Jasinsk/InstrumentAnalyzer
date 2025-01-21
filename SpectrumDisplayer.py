@@ -9,7 +9,7 @@ import matplotlib.ticker as ticker
 def DrawSpectrum(frequencies, spectrum, maxValue, startTime, endTime, offset):
     plt.plot(frequencies + offset, spectrum, linewidth=1)
     #plt.locator_params(nbins=40)
-    plt.xlim([0, 10000])
+    plt.xlim([0, 4000])
     #plt.ylim([10e-12, maxValue * 1.1])
     plt.xlabel('f [Hz]', fontsize=23)
     #plt.xticks(np.arange(110, 3110, step=100))
@@ -24,7 +24,7 @@ def DrawSpectrum(frequencies, spectrum, maxValue, startTime, endTime, offset):
     #plt.xscale('log')
     #plt.ticklabel_format(useMathText=True, scilimits=(0, 0))
     plt.yticks(np.arange(-80, -35 , step=5),fontsize=14 )
-    plt.ylim([-80, -40])
+    plt.ylim([-100 , -40])
     plt.tick_params('x', length=0)
     #plt.title(str(startTime) + ' - ' + str(endTime) + ' [s]', fontsize=25)
     plt.grid(linewidth=1, which='both')

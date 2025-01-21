@@ -179,23 +179,24 @@ def main():
     Path(OUTPUT_DIRECTORY).mkdir()
 
     for seriesPath in sorted(Path(INPUT_DIRECTORY).iterdir()):
-        seriesDirectory = seriesPath.stem.rstrip('.wav')
+        if seriesPath.name != ".DS_Store":  # ignore MacOS system files
+            seriesDirectory = seriesPath.stem.rstrip('.wav')
 
-        print("Entering: " + seriesPath.name)
+            print("Entering: " + seriesPath.name)
 
-        signal, samplingRate = lbr.load(seriesPath, sr=None)
+            signal, samplingRate = lbr.load(seriesPath, sr=None)
 
-        foundPeaks = FindPeaks(signal, samplingRate, thresholdPercentage=parser_config.peakThresholdPercentage)
-        foundPeaks = RemoveDuplicatePeaks(foundPeaks, samplingRate, parser_config.minimalTimeDifference,
-                                          parser_config.decayTime, len(signal))
-        foundImpulses = ParseImpulses(signal, samplingRate, foundPeaks, parser_config.attackTime, parser_config.decayTime)
-        validatedImpulses, validatedPeaks = RemoveImpulsesWithEnergyDeviation(foundImpulses, samplingRate,
-                                                            parser_config.energyDeviationPercentage, foundPeaks,
-                                                            parser_config.attackEnergyTime, parser_config.attackEnergyDeviationPercentage)
-        WriteParsedImpulsesToFolder(validatedImpulses, samplingRate, OUTPUT_DIRECTORY, seriesDirectory)
+            foundPeaks = FindPeaks(signal, samplingRate, thresholdPercentage=parser_config.peakThresholdPercentage)
+            foundPeaks = RemoveDuplicatePeaks(foundPeaks, samplingRate, parser_config.minimalTimeDifference,
+                                              parser_config.decayTime, len(signal))
+            foundImpulses = ParseImpulses(signal, samplingRate, foundPeaks, parser_config.attackTime, parser_config.decayTime)
+            validatedImpulses, validatedPeaks = RemoveImpulsesWithEnergyDeviation(foundImpulses, samplingRate,
+                                                                parser_config.energyDeviationPercentage, foundPeaks,
+                                                                parser_config.attackEnergyTime, parser_config.attackEnergyDeviationPercentage)
+            WriteParsedImpulsesToFolder(validatedImpulses, samplingRate, OUTPUT_DIRECTORY, seriesDirectory)
 
-        if parser_config.showFoundPeaks_Flag:
-            DrawParsedImpulseValidation(signal, foundPeaks, validatedPeaks, samplingRate, seriesDirectory)
+            if parser_config.showFoundPeaks_Flag:
+                DrawParsedImpulseValidation(signal, foundPeaks, validatedPeaks, samplingRate, seriesDirectory)
 
 
 if __name__ == "__main__":
