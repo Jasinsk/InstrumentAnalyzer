@@ -235,34 +235,94 @@ def CalculateRMS(args):
 
 #Calculates the signals temporal centroid. Only takes into account signal over threshold to disguard silence.
 # Watch out when using signals of different lengths.
-def CalculateTemporalCentroid(args, windowLength = 128, hopsize = 64, threshold = 15):
+def CalculateTemporalCentroid(args, windowLength = 128, hopsize = 64):
     envelope = iracema.features.peak_envelope(args.impulseIRA, windowLength, hopsize)
     envelope.data = 10 * np.log10(abs(envelope.data))
-    maxEnv = max(envelope.data)
 
-    amplitudeSum = sum(envelope.data)
-    ampXTimeSum = 0
+    # Smooth the envelope
+    windowSize = int(args.samplingRate * 0.0007)
+    smoothedEnvelope = SmoothEnvelope(envelope.data, windowSize)
 
-    for i in range(0, len(envelope)):
-        if envelope.data[i] > (maxEnv - threshold):
-            ampXTimeSum += (envelope.time[i] * envelope.data[i])
-    return (ampXTimeSum/amplitudeSum)
+    # Normalize the log envelope
+    smoothedEnvelope -= np.min(smoothedEnvelope)
+    smoothedEnvelope /= np.max(smoothedEnvelope)
 
+    amplitudeSum = np.sum(smoothedEnvelope)
+    ampXTimeSum = np.sum(smoothedEnvelope * envelope.time)
+
+    tempCentroid = ampXTimeSum/amplitudeSum
+
+    # Drawing the original envelope, the smoothed one and temporal centroid bands laid on top for both
+    # smoothed_indicator = np.zeros(len(envelope.data))
+    # smoothed_index = np.argmin(np.abs(envelope.time - tempCentroid))
+    # smoothed_indicator[smoothed_index] = 1
+    #
+    # plt.figure()
+    # plt.plot(smoothedEnvelope, color='silver', label='Smoothed Envelope')
+    # plt.plot(envelope.data, color='grey', label='Envelope')
+    # plt.plot(smoothed_indicator, color='chartreuse', label='Smoothed Temporal Centroid')
+    # plt.legend(loc='lower right')
+    # #plt.xlim(0, 1500)
+    # plt.show()
+
+    return tempCentroid
 
 # Calculate log of attack time of signal. The algorythm was simplified when it comes to finding the start time of attack due to the it giving better results for guitar
-def CalculateLogAttackTime(args, windowLength = 64, hopsize = 32, threshold = 0.1):
+def CalculateLogAttackTime(args, windowLength = 254, hopsize = 32, threshold = 0.1):
     envelope = iracema.features.peak_envelope(args.impulseIRA, windowLength, hopsize)
-    maxEnv = max(envelope.data)
+    envelope.data = 10 * np.log10(abs(envelope.data))
+
     startTime, stopTime = 0, 0
 
-    for i in range(0, len(envelope)):
-        if envelope.data[i] > (maxEnv * threshold):
-            startTime = envelope.time[i]
-            break
-    for i in range(0, len(envelope)):
-        if envelope.data[i] == maxEnv:
-            stopTime = envelope.time[i]
-            break
+    windowSize = int(args.samplingRate * 0.0007)
+    smoothedEnvelope = SmoothEnvelope(envelope.data, windowSize)
+    maxEnv = max(smoothedEnvelope)
+
+    startIndicator = np.zeros(len(envelope.data))
+    stopIndicator = np.zeros(len(envelope.data))
+
+    max_y_diff = 0
+    start_index = 0
+    end_index = 0
+
+    current_start = 0
+    for i in range(1, len(smoothedEnvelope)):
+        if smoothedEnvelope[i] > smoothedEnvelope[i - 1]:  # Still rising
+            continue
+        else:
+            # Calculate the y-axis difference for the current segment
+            y_diff = smoothedEnvelope[i - 1] - smoothedEnvelope[current_start]
+            if y_diff > max_y_diff:
+                max_y_diff = y_diff
+                start_index = current_start
+                end_index = i - 1
+
+            # Reset for the next segment
+            current_start = i
+
+    # Check the last segment
+    y_diff = smoothedEnvelope[-1] - smoothedEnvelope[current_start]
+    if y_diff > max_y_diff:
+        max_y_diff = y_diff
+        start_index = current_start
+        end_index = len(smoothedEnvelope) - 1
+
+    startTime = envelope.time[start_index]
+    stopTime = envelope.time[end_index]
+
+    startIndicator[start_index] = -50
+    stopIndicator[end_index] = -50
+
+    # Drawing the original envelope, the smoothed one and start end bands laid on top
+    # plt.figure()
+    # plt.plot(smoothedEnvelope+5, color='silver', label='Smoothed Envelope')
+    # plt.plot(envelope.data, color='grey', label='Envelope')
+    # plt.plot(startIndicator, 'orangered', label='Start Decay Time')
+    # plt.plot(stopIndicator, color='chartreuse', label='Stop Decay Time')
+    # plt.legend(loc='lower right')
+    # plt.xlim(0, 1500)
+    # plt.show()
+
     if stopTime != startTime:
         return math.log10(stopTime - startTime)
     else:
@@ -270,11 +330,11 @@ def CalculateLogAttackTime(args, windowLength = 64, hopsize = 32, threshold = 0.
 
 
 # Calculates time between the peak of impulse and it decaying below the value of max-threshold in dB
-def CalculateDecayTime(args, windowLength = 2048, hopsize = 128, threshold = 15):
+def CalculateDecayTime(args, windowLength = 2048, hopsize = 128, threshold = 10):
     envelope = iracema.features.peak_envelope(args.impulseIRA, windowLength, hopsize)
     envelope.data = 10 * np.log10(abs(envelope.data))
 
-    windowSize = int(args.samplingRate * 0.004)
+    windowSize = int(args.samplingRate * 0.002)
     smoothedEnvelope = SmoothEnvelope(envelope.data, windowSize)
     maxEnv = max(smoothedEnvelope)
 
@@ -295,15 +355,16 @@ def CalculateDecayTime(args, windowLength = 2048, hopsize = 128, threshold = 15)
             decayTime = envelope.time[i] - peakTime
             stopIndicator[i] = -50
             break
-    '''
-    # Drawing the original signal with parsed impulse strips laid on top
-    plt.figure()
-    plt.plot(smoothedEnvelope, color='silver', label='Envelope')
-    plt.plot(startIndicator, 'orangered', label='Start Decay Time')
-    plt.plot(stopIndicator, color='chartreuse', label='Stop Decay Time')
-    plt.legend(loc='lower right')
-    plt.show()
-    '''
+
+    # Drawing the original envelope, the smoothed one and start end bands laid on top
+    # plt.figure()
+    # plt.plot(smoothedEnvelope+5, color='silver', label='Smoothed Envelope')
+    # plt.plot(envelope.data, color='grey', label='Envelope')
+    # plt.plot(startIndicator, 'orangered', label='Start Decay Time')
+    # plt.plot(stopIndicator, color='chartreuse', label='Stop Decay Time')
+    # plt.legend(loc='lower right')
+    # plt.show()
+
     return decayTime
 
 
